@@ -7,7 +7,7 @@ type Props = {
   onDelete: (id: string) => void;
 };
 
-export default function CardListItem({ card, onEdit, onView, onDelete }: Props) {
+export default function CardItem({ card, onEdit, onView, onDelete }: Props) {
   return (
     <div className="rounded-2xl border bg-white p-6 shadow">
       <h2 className="text-3xl font-bold">📇 {card.title}</h2>

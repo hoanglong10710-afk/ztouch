@@ -4,6 +4,7 @@ import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import EditForm from "./EditForm";
+import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -93,11 +94,7 @@ export default function EditPage() {
   }
 
   if (loading || !card) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        Đang tải...
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   return (

@@ -3,7 +3,10 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
-import CardListItem from "@/components/dashboard/CardListItem";
+import DashboardHeader from "@/components/dashboard/DashboardHeader";
+import CardItem from "@/components/dashboard/CardItem";
+import EmptyState from "@/components/dashboard/EmptyState";
+import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import type { Card } from "@/types/card";
 import type { User } from "@supabase/supabase-js";
 
@@ -96,46 +99,29 @@ export default function Dashboard() {
   }
 
   if (loading || !user) {
-    return (
-      <main className="flex min-h-screen items-center justify-center">
-        Đang tải...
-      </main>
-    );
+    return <LoadingScreen />;
   }
 
   return (
     <main className="mx-auto max-w-4xl p-10">
 
-      <h1 className="text-5xl font-bold">
-        ☀️ SUNPEO ZTOUCH
-      </h1>
-
-      <p className="mt-8 text-2xl">
-        Xin chào
-      </p>
-
-      <p className="mt-2 text-lg">
-        {user.email}
-      </p>
-
-      <button
-        onClick={createCard}
-        className="mt-8 rounded-xl bg-blue-600 px-8 py-4 text-lg text-white hover:bg-blue-700"
-      >
-        + Tạo hồ sơ mới
-      </button>
+      <DashboardHeader userEmail={user.email} onCreateCard={createCard} />
 
       <div className="mt-10 space-y-6">
 
-        {cards.map((card) => (
-          <CardListItem
-            key={card.id}
-            card={card}
-            onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
-            onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
-            onDelete={deleteCard}
-          />
-        ))}
+        {cards.length === 0 ? (
+          <EmptyState />
+        ) : (
+          cards.map((card) => (
+            <CardItem
+              key={card.id}
+              card={card}
+              onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
+              onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
+              onDelete={deleteCard}
+            />
+          ))
+        )}
 
       </div>
 
