@@ -31,7 +31,7 @@ const SOCIAL_LINKS: { key: CardStringField; label: string; className: string }[]
 export default async function PublicPage({ params }: Props) {
   const { publicId } = await params;
 
-  const supabase = createServerSupabase();
+  const supabase = await createServerSupabase();
 
   const { data } = await supabase
     .from("cards")

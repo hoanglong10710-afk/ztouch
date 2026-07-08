@@ -3,33 +3,17 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 
 export default function LoginPage() {
   const router = useRouter();
+  const { user, loading } = useAuth();
 
   useEffect(() => {
-    async function checkSession() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (session) {
-        router.replace("/dashboard");
-      }
+    if (!loading && user) {
+      router.replace("/dashboard");
     }
-
-    checkSession();
-
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) {
-        router.replace("/dashboard");
-      }
-    });
-
-    return () => subscription.unsubscribe();
-  }, [router]);
+  }, [loading, user, router]);
 
   async function login() {
     await supabase.auth.signInWithOAuth({

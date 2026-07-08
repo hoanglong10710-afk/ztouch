@@ -3,40 +3,30 @@
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import type { Card } from "@/types/card";
-import type { User } from "@supabase/supabase-js";
 
 export default function Dashboard() {
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
-  const [user, setUser] = useState<User | null>(null);
   const [cards, setCards] = useState<Card[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [cardsLoading, setCardsLoading] = useState(true);
 
   useEffect(() => {
-    loadUser();
-  }, []);
+    if (authLoading) return;
 
-  async function loadUser() {
-    const {
-      data: { session },
-    } = await supabase.auth.getSession();
-
-    if (!session) {
+    if (!user) {
       router.push("/login");
       return;
     }
 
-    setUser(session.user);
-
-    await loadCards(session.user.id);
-
-    setLoading(false);
-  }
+    loadCards(user.id).then(() => setCardsLoading(false));
+  }, [authLoading, user]);
 
   async function loadCards(userId: string) {
     const { data, error } = await supabase
@@ -98,7 +88,7 @@ export default function Dashboard() {
     router.push("/login");
   }
 
-  if (loading || !user) {
+  if (authLoading || !user || cardsLoading) {
     return <LoadingScreen />;
   }
 

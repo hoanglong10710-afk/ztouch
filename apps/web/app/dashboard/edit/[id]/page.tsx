@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
+import { useAuth } from "@/components/auth/AuthProvider";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import type { Card } from "@/types/card";
@@ -10,6 +11,7 @@ import type { Card } from "@/types/card";
 export default function EditPage() {
   const params = useParams();
   const router = useRouter();
+  const { user, loading: authLoading } = useAuth();
 
   const id = params.id as string;
 
@@ -19,23 +21,22 @@ export default function EditPage() {
   const [card, setCard] = useState<Card | null>(null);
 
   useEffect(() => {
+    if (authLoading) return;
+
+    if (!user) {
+      router.push("/login");
+      return;
+    }
+
+    const userId = user.id;
     let ignore = false;
 
     async function loadCard() {
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        router.push("/login");
-        return;
-      }
-
       const { data, error } = await supabase
         .from("cards")
         .select("*")
         .eq("id", id)
-        .eq("owner_id", session.user.id)
+        .eq("owner_id", userId)
         .single();
 
       if (ignore) return;
@@ -54,7 +55,7 @@ export default function EditPage() {
     return () => {
       ignore = true;
     };
-  }, []);
+  }, [authLoading, user, id]);
 
   async function saveCard() {
     if (!card) return;
@@ -93,7 +94,7 @@ export default function EditPage() {
     alert("✅ Đã lưu thành công!");
   }
 
-  if (loading || !card) {
+  if (authLoading || loading || !card) {
     return <LoadingScreen />;
   }
 
