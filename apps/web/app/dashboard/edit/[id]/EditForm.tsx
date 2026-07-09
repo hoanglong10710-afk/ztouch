@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import AvatarUploader from "@/components/dashboard/AvatarUploader";
 
 type Props = {
   card: Card;
@@ -71,6 +72,13 @@ export default function EditForm({ card, setCard, errors }: Props) {
         <h2 className="text-lg font-semibold">Thông tin cơ bản</h2>
 
         <div className="space-y-6">
+          <AvatarUploader
+            cardId={card.id}
+            ownerId={card.owner_id}
+            avatarUrl={card.avatar_url}
+            onUploaded={(url) => updateField("avatar_url", url)}
+          />
+
           {BASIC_FIELDS.map(renderField)}
 
           <div className="space-y-1.5">

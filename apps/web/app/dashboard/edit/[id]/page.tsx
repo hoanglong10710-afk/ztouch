@@ -71,6 +71,7 @@ export default function EditPage() {
       .update({
         title: card.title,
         display_name: card.display_name,
+        avatar_url: card.avatar_url,
         bio: card.bio,
         job_title: card.job_title,
         company: card.company,
