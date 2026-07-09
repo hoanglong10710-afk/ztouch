@@ -8,6 +8,7 @@ import { Button } from "@/components/ui/button";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
+import { updateCard as updateCardAction } from "./actions";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -66,34 +67,12 @@ export default function EditPage() {
 
     setSaving(true);
 
-    const { error } = await supabase
-      .from("cards")
-      .update({
-        title: card.title,
-        display_name: card.display_name,
-        avatar_url: card.avatar_url,
-        is_public: card.is_public,
-        bio: card.bio,
-        job_title: card.job_title,
-        company: card.company,
-        phone: card.phone,
-        email: card.email,
-        website: card.website,
-        facebook: card.facebook,
-        tiktok: card.tiktok,
-        youtube: card.youtube,
-        instagram: card.instagram,
-        linkedin: card.linkedin,
-        github: card.github,
-        address: card.address,
-      })
-      .eq("id", id)
-      .eq("owner_id", card.owner_id);
+    const result = await updateCardAction(id, card);
 
     setSaving(false);
 
-    if (error) {
-      alert(error.message);
+    if (!result.success) {
+      alert(result.error);
       return;
     }
 
