@@ -6,7 +6,6 @@ export const ALLOWED_AVATAR_TYPES = ["image/jpeg", "image/png", "image/webp"];
 export class AvatarUploadError extends Error {}
 
 export async function uploadAvatar(
-  ownerId: string,
   cardId: string,
   file: File
 ): Promise<string> {
@@ -18,8 +17,16 @@ export async function uploadAvatar(
     throw new AvatarUploadError("Ảnh vượt quá dung lượng tối đa 5MB");
   }
 
+  const {
+    data: { user },
+  } = await supabase.auth.getUser();
+
+  if (!user) {
+    throw new AvatarUploadError("Bạn cần đăng nhập để tải ảnh lên");
+  }
+
   const ext = file.name.split(".").pop() || "jpg";
-  const path = `${ownerId}/${cardId}.${ext}`;
+  const path = `${user.id}/${cardId}.${ext}`;
 
   const { error } = await supabase.storage
     .from("avatars")

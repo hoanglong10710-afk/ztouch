@@ -12,14 +12,13 @@ import {
 
 type Props = {
   cardId: string;
-  ownerId: string;
   avatarUrl: string | null;
   onUploaded: (url: string) => void;
 };
 
 const FALLBACK_AVATAR = "https://placehold.co/200x200";
 
-export default function AvatarUploader({ cardId, ownerId, avatarUrl, onUploaded }: Props) {
+export default function AvatarUploader({ cardId, avatarUrl, onUploaded }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);
   const [preview, setPreview] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -47,7 +46,7 @@ export default function AvatarUploader({ cardId, ownerId, avatarUrl, onUploaded 
     setUploading(true);
 
     try {
-      const publicUrl = await uploadAvatar(ownerId, cardId, file);
+      const publicUrl = await uploadAvatar(cardId, file);
       onUploaded(publicUrl);
     } catch (err) {
       setError(err instanceof AvatarUploadError ? err.message : "Tải ảnh lên thất bại");

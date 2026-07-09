@@ -74,7 +74,6 @@ export default function EditForm({ card, setCard, errors }: Props) {
         <div className="space-y-6">
           <AvatarUploader
             cardId={card.id}
-            ownerId={card.owner_id}
             avatarUrl={card.avatar_url}
             onUploaded={(url) => updateField("avatar_url", url)}
           />
