@@ -6,6 +6,7 @@ import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
+import { Switch } from "@/components/ui/switch";
 import AvatarUploader from "@/components/dashboard/AvatarUploader";
 
 type Props = {
@@ -77,6 +78,21 @@ export default function EditForm({ card, setCard, errors }: Props) {
             avatarUrl={card.avatar_url}
             onUploaded={(url) => updateField("avatar_url", url)}
           />
+
+          <div className="flex items-center justify-between gap-4 rounded-lg border border-border p-4">
+            <div className="space-y-1">
+              <Label htmlFor="is_public">Công khai hồ sơ</Label>
+              <p className="text-sm text-muted-foreground">
+                Khi tắt, hồ sơ sẽ không thể truy cập qua NFC, QR hoặc liên kết công khai.
+              </p>
+            </div>
+
+            <Switch
+              id="is_public"
+              checked={card.is_public}
+              onCheckedChange={(checked) => setCard({ ...card, is_public: checked })}
+            />
+          </div>
 
           {BASIC_FIELDS.map(renderField)}
 

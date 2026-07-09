@@ -72,6 +72,7 @@ export default function EditPage() {
         title: card.title,
         display_name: card.display_name,
         avatar_url: card.avatar_url,
+        is_public: card.is_public,
         bio: card.bio,
         job_title: card.job_title,
         company: card.company,

@@ -30,7 +30,7 @@ export default function CardItem({ card, onEdit, onView, onDelete }: Props) {
       </p>
 
       <p className="text-foreground">
-        <b>Trạng thái:</b> {card.status}
+        {card.is_public ? "🟢 Công khai" : "🔒 Riêng tư"}
       </p>
 
       <div className="mt-6 flex flex-wrap gap-3">
