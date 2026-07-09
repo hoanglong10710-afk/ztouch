@@ -10,7 +10,9 @@ export const getCardByPublicId = cache(async (publicId: string) => {
   const { data, error } = await supabase
     .from("cards")
     .select("*")
-    .eq("public_id", publicId);
+    .eq("public_id", publicId)
+    .eq("is_public", true)
+    .eq("status", "active");
 
   return { card: data?.[0] as Card | undefined, error };
 });
