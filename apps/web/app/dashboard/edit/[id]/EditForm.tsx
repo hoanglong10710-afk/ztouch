@@ -89,6 +89,7 @@ export default function EditForm({ card, setCard, errors }: Props) {
 
             <Switch
               id="is_public"
+              aria-label="Công khai hồ sơ"
               checked={card.is_public}
               onCheckedChange={(checked) => setCard({ ...card, is_public: checked })}
             />

@@ -7,6 +7,11 @@ import SocialButton from "@/components/public/SocialButton";
 import { getCardByPublicId } from "./data";
 import type { CardStringField } from "@/types/card";
 
+// Without this, Next.js's fetch cache can serve a stale card (e.g. after an
+// owner edits their profile or toggles visibility) until an unrelated
+// revalidation happens to occur — this route must always reflect current data.
+export const dynamic = "force-dynamic";
+
 type Props = {
   params: Promise<{
     publicId: string;
