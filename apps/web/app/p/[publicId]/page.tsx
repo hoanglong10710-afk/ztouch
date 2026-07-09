@@ -51,13 +51,13 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
       title: name,
       description,
       type: "profile",
-      images: card.avatar_url ? [card.avatar_url] : undefined,
+      images: isSafeUrl(card.avatar_url) ? [card.avatar_url] : undefined,
     },
     twitter: {
       card: "summary",
       title: name,
       description,
-      images: card.avatar_url ? [card.avatar_url] : undefined,
+      images: isSafeUrl(card.avatar_url) ? [card.avatar_url] : undefined,
     },
   };
 }
@@ -82,7 +82,7 @@ export default async function PublicPage({ params }: Props) {
             name={card.display_name || card.title || ""}
             jobTitle={card.job_title}
             bio={card.bio}
-            avatarUrl={card.avatar_url}
+            avatarUrl={isSafeUrl(card.avatar_url) ? card.avatar_url : null}
           />
 
           <div className="mt-8 space-y-3">

@@ -1,3 +1,6 @@
+"use client";
+
+import { useState } from "react";
 import Image from "next/image";
 
 type Props = {
@@ -7,15 +10,20 @@ type Props = {
   avatarUrl: string | null;
 };
 
+const FALLBACK_AVATAR = "https://placehold.co/200x200";
+
 export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props) {
+  const [imageFailed, setImageFailed] = useState(false);
+
   return (
     <div className="flex flex-col items-center">
       <Image
-        src={avatarUrl || "https://placehold.co/200x200"}
+        src={!imageFailed && avatarUrl ? avatarUrl : FALLBACK_AVATAR}
         alt={name}
         width={144}
         height={144}
         className="h-36 w-36 rounded-full border border-border object-cover"
+        onError={() => setImageFailed(true)}
       />
 
       <h1 className="mt-6 text-3xl font-bold text-foreground">{name}</h1>

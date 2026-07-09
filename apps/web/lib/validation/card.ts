@@ -5,6 +5,7 @@ export type CardFormErrors = Partial<Record<CardStringField, string>>;
 const REQUIRED_FIELDS: CardStringField[] = ["title"];
 
 const URL_FIELDS: CardStringField[] = [
+  "avatar_url",
   "website",
   "facebook",
   "tiktok",
