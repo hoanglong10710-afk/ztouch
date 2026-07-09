@@ -1,35 +1,54 @@
 "use client";
 
+import { QrCode as QrCodeIcon } from "lucide-react";
 import QRCode from "react-qr-code";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+  DialogTrigger,
+} from "@/components/ui/dialog";
+import { Button } from "@/components/ui/button";
+import CopyButton from "@/components/CopyButton";
 
 type Props = {
   publicId: string;
 };
 
 export default function QRCodeDialog({ publicId }: Props) {
-  const url =
-    `${window.location.origin}/p/${publicId}`;
+  const url = `${window.location.origin}/p/${publicId}`;
 
   return (
-    <div className="rounded-xl border bg-white p-6">
+    <Dialog>
+      <DialogTrigger
+        render={
+          <Button type="button" variant="outline">
+            <QrCodeIcon className="size-4" />
+            QR
+          </Button>
+        }
+      />
 
-      <h2 className="mb-4 text-xl font-bold">
-        QR Code
-      </h2>
+      <DialogContent>
+        <DialogHeader>
+          <DialogTitle>Mã QR hồ sơ</DialogTitle>
+          <DialogDescription>
+            Quét mã để mở trang hồ sơ công khai.
+          </DialogDescription>
+        </DialogHeader>
 
-      <div className="flex justify-center">
+        <div className="flex justify-center rounded-lg bg-background p-4">
+          <QRCode value={url} size={200} />
+        </div>
 
-        <QRCode
-          value={url}
-          size={220}
-        />
+        <p className="break-all text-center text-sm text-muted-foreground">
+          {url}
+        </p>
 
-      </div>
-
-      <p className="mt-4 break-all text-center text-sm">
-        {url}
-      </p>
-
-    </div>
+        <CopyButton value={url} />
+      </DialogContent>
+    </Dialog>
   );
 }

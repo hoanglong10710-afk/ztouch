@@ -1,4 +1,8 @@
+import { Pencil, Eye, Trash2 } from "lucide-react";
 import type { Card } from "@/types/card";
+import { Button } from "@/components/ui/button";
+import QRCodeDialog from "@/components/QRCodeDialog";
+import ShareButton from "@/components/ShareButton";
 
 type Props = {
   card: Card;
@@ -8,43 +12,46 @@ type Props = {
 };
 
 export default function CardItem({ card, onEdit, onView, onDelete }: Props) {
-  return (
-    <div className="rounded-2xl border bg-white p-6 shadow">
-      <h2 className="text-3xl font-bold">📇 {card.title}</h2>
+  const publicUrl =
+    typeof window !== "undefined"
+      ? `${window.location.origin}/p/${card.public_id}`
+      : "";
 
-      <p className="mt-3">
+  return (
+    <div className="rounded-2xl border border-border bg-card p-6 shadow">
+      <h2 className="text-3xl font-bold text-foreground">{card.title}</h2>
+
+      <p className="mt-3 text-foreground">
         <b>Public ID:</b> {card.public_id}
       </p>
 
-      <p>
+      <p className="text-foreground">
         <b>Loại:</b> {card.profile_type}
       </p>
 
-      <p>
+      <p className="text-foreground">
         <b>Trạng thái:</b> {card.status}
       </p>
 
-      <div className="mt-6 flex gap-4">
-        <button
-          onClick={() => onEdit(card.id)}
-          className="rounded-lg bg-blue-600 px-5 py-3 text-white hover:bg-blue-700"
-        >
-          ✏️ Sửa
-        </button>
+      <div className="mt-6 flex flex-wrap gap-3">
+        <Button type="button" variant="secondary" onClick={() => onEdit(card.id)}>
+          <Pencil className="size-4" />
+          Sửa
+        </Button>
 
-        <button
-          onClick={() => onView(card.public_id)}
-          className="rounded-lg bg-green-600 px-5 py-3 text-white hover:bg-green-700"
-        >
-          👁 Xem
-        </button>
+        <Button type="button" variant="outline" onClick={() => onView(card.public_id)}>
+          <Eye className="size-4" />
+          Xem
+        </Button>
 
-        <button
-          onClick={() => onDelete(card.id)}
-          className="rounded-lg bg-red-600 px-5 py-3 text-white hover:bg-red-700"
-        >
-          🗑 Xóa
-        </button>
+        <QRCodeDialog publicId={card.public_id} />
+
+        <ShareButton url={publicUrl} title={card.title ?? undefined} />
+
+        <Button type="button" variant="destructive" onClick={() => onDelete(card.id)}>
+          <Trash2 className="size-4" />
+          Xóa
+        </Button>
       </div>
     </div>
   );

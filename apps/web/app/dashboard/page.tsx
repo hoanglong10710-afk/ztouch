@@ -2,8 +2,10 @@
 
 import { useEffect, useState } from "react";
 import { useRouter } from "next/navigation";
+import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/button";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
@@ -115,12 +117,16 @@ export default function Dashboard() {
 
       </div>
 
-      <button
+      <Button
+        type="button"
+        variant="destructive"
+        size="lg"
+        className="mt-12"
         onClick={logout}
-        className="mt-12 rounded-xl bg-red-600 px-8 py-4 text-white hover:bg-red-700"
       >
+        <LogOut className="size-4" />
         Đăng xuất
-      </button>
+      </Button>
 
     </main>
   );
