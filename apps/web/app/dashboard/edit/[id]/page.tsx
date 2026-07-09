@@ -1,11 +1,13 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { Button } from "@/components/ui/button";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
+import { validateCard, hasErrors } from "@/lib/validation/card";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -19,6 +21,7 @@ export default function EditPage() {
   const [saving, setSaving] = useState(false);
 
   const [card, setCard] = useState<Card | null>(null);
+  const [initialCard, setInitialCard] = useState<Card | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -47,6 +50,7 @@ export default function EditPage() {
       }
 
       setCard(data as Card);
+      setInitialCard(data as Card);
       setLoading(false);
     }
 
@@ -91,8 +95,16 @@ export default function EditPage() {
       return;
     }
 
+    setInitialCard(card);
     alert("✅ Đã lưu thành công!");
   }
+
+  const errors = useMemo(() => (card ? validateCard(card) : {}), [card]);
+  const isDirty = useMemo(
+    () => JSON.stringify(card) !== JSON.stringify(initialCard),
+    [card, initialCard]
+  );
+  const canSave = isDirty && !hasErrors(errors) && !saving;
 
   if (authLoading || loading || !card) {
     return <LoadingScreen />;
@@ -109,15 +121,16 @@ export default function EditPage() {
 
       <h1 className="mb-8 text-4xl font-bold">✏️ Chỉnh sửa hồ sơ</h1>
 
-      <EditForm card={card} setCard={setCard} />
+      <EditForm card={card} setCard={setCard} errors={errors} />
 
-      <button
+      <Button
         onClick={saveCard}
-        disabled={saving}
-        className="mt-6 rounded-xl bg-blue-600 px-8 py-4 text-white hover:bg-blue-700 disabled:opacity-50"
+        disabled={!canSave}
+        size="lg"
+        className="mt-6"
       >
         {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
-      </button>
+      </Button>
     </main>
   );
 }
