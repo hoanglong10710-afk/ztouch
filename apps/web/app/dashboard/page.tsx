@@ -5,6 +5,7 @@ import { useRouter } from "next/navigation";
 import { LogOut } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
+import { createCard as createCardAction } from "./actions";
 import { Button } from "@/components/ui/button";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
@@ -45,20 +46,10 @@ export default function Dashboard() {
   async function createCard() {
     if (!user) return;
 
-    const publicId = Math.random().toString(36).substring(2, 8).toUpperCase();
+    const result = await createCardAction();
 
-    const { error } = await supabase.from("cards").insert({
-      owner_id: user.id,
-      profile_type: "personal",
-      title: "Hồ sơ mới",
-      public_id: publicId,
-      avatar_url: user.user_metadata.avatar_url,
-      status: "active",
-      is_public: true,
-    });
-
-    if (error) {
-      alert(error.message);
+    if (!result.success) {
+      alert(result.error);
       return;
     }
 
