@@ -1,17 +1,19 @@
 import { Pencil, Eye, Trash2 } from "lucide-react";
 import type { Card } from "@/types/card";
+import type { CardViewStats } from "@/lib/analytics/get-card-view-stats";
 import { Button } from "@/components/ui/button";
 import QRCodeDialog from "@/components/QRCodeDialog";
 import ShareButton from "@/components/ShareButton";
 
 type Props = {
   card: Card;
+  stats?: CardViewStats;
   onEdit: (id: string) => void;
   onView: (publicId: string) => void;
   onDelete: (id: string) => void;
 };
 
-export default function CardItem({ card, onEdit, onView, onDelete }: Props) {
+export default function CardItem({ card, stats, onEdit, onView, onDelete }: Props) {
   const publicUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/p/${card.public_id}`
@@ -32,6 +34,15 @@ export default function CardItem({ card, onEdit, onView, onDelete }: Props) {
       <p className="text-foreground">
         {card.is_public ? "🟢 Công khai" : "🔒 Riêng tư"}
       </p>
+
+      {stats && (
+        <p className="mt-3 text-sm text-muted-foreground">
+          <b>{stats.totalViews}</b> lượt xem tổng ·{" "}
+          <b>{stats.today}</b> hôm nay ·{" "}
+          <b>{stats.last7Days}</b> 7 ngày qua ·{" "}
+          <b>{stats.last30Days}</b> 30 ngày qua
+        </p>
+      )}
 
       <div className="mt-6 flex flex-wrap gap-3">
         <Button type="button" variant="secondary" onClick={() => onEdit(card.id)}>

@@ -11,6 +11,7 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
+import { getCardViewStats, type CardViewStats } from "@/lib/analytics/get-card-view-stats";
 import type { Card } from "@/types/card";
 
 export default function Dashboard() {
@@ -19,6 +20,7 @@ export default function Dashboard() {
 
   const [cards, setCards] = useState<Card[]>([]);
   const [cardsLoading, setCardsLoading] = useState(true);
+  const [viewStats, setViewStats] = useState<Record<string, CardViewStats>>({});
 
   useEffect(() => {
     if (authLoading) return;
@@ -40,6 +42,7 @@ export default function Dashboard() {
 
     if (!error && data) {
       setCards(data as Card[]);
+      setViewStats(await getCardViewStats(supabase, data.map((card) => card.id)));
     }
   }
 
@@ -99,6 +102,7 @@ export default function Dashboard() {
             <CardItem
               key={card.id}
               card={card}
+              stats={viewStats[card.id]}
               onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
               onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
               onDelete={deleteCard}
