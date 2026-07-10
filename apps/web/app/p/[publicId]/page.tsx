@@ -1,10 +1,14 @@
 import { notFound } from "next/navigation";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import { Phone, Mail, Globe } from "lucide-react";
 import type { Metadata } from "next";
 import ProfileHeader from "@/components/public/ProfileHeader";
 import InfoButton from "@/components/public/InfoButton";
 import SocialButton from "@/components/public/SocialButton";
 import { getCardByPublicId } from "./data";
+import { createServerSupabase } from "@/lib/supabase/server";
+import { recordCardView } from "@/lib/analytics/record-card-view";
 import type { CardStringField } from "@/types/card";
 
 // Without this, Next.js's fetch cache can serve a stale card (e.g. after an
@@ -15,6 +19,9 @@ export const dynamic = "force-dynamic";
 type Props = {
   params: Promise<{
     publicId: string;
+  }>;
+  searchParams: Promise<{
+    src?: string | string[];
   }>;
 };
 
@@ -67,7 +74,7 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   };
 }
 
-export default async function PublicPage({ params }: Props) {
+export default async function PublicPage({ params, searchParams }: Props) {
   const { publicId } = await params;
   const { card, error } = await getCardByPublicId(publicId);
 
@@ -78,6 +85,18 @@ export default async function PublicPage({ params }: Props) {
   if (!card) {
     notFound();
   }
+
+  // Request data must be read here, during render — after() cannot call
+  // cookies()/headers() itself from inside a Server Component (see
+  // lib/analytics/record-card-view.ts for why a client built from cookies()
+  // is passed in rather than constructed inside the callback).
+  const { src } = await searchParams;
+  const requestHeaders = await headers();
+  const referer = requestHeaders.get("referer");
+  const userAgent = requestHeaders.get("user-agent");
+  const supabase = await createServerSupabase();
+
+  after(() => recordCardView(supabase, { cardId: card.id, src, referer, userAgent }));
 
   return (
     <main className="min-h-screen bg-muted">
