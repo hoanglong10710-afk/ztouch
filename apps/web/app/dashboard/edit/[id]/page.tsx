@@ -22,6 +22,7 @@ import { validateCard, hasErrors } from "@/lib/validation/card";
 import { updateCard as updateCardAction } from "./actions";
 import { toast } from "@/components/ui/toast";
 import { readFirstProfile, clearFirstProfile } from "@/lib/onboarding/first-profile";
+import { markLastCompletedProfile } from "@/lib/onboarding/last-completed-profile";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -195,7 +196,14 @@ export default function EditPage() {
           </div>
 
           <DialogFooter>
-            <Button type="button" onClick={() => setShowReadyDialog(false)}>
+            <Button
+              type="button"
+              onClick={() => {
+                setShowReadyDialog(false);
+                markLastCompletedProfile({ cardId: card.id });
+                router.push("/dashboard");
+              }}
+            >
               Đóng
             </Button>
           </DialogFooter>

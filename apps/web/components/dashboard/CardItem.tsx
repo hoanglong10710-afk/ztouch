@@ -4,23 +4,30 @@ import type { CardViewStats } from "@/lib/analytics/get-card-view-stats";
 import { Button } from "@/components/ui/button";
 import QRCodeDialog from "@/components/QRCodeDialog";
 import ShareButton from "@/components/ShareButton";
+import { cn } from "@/lib/utils";
 
 type Props = {
   card: Card;
   stats?: CardViewStats;
+  highlighted?: boolean;
   onEdit: (id: string) => void;
   onView: (publicId: string) => void;
   onDelete: (id: string) => void;
 };
 
-export default function CardItem({ card, stats, onEdit, onView, onDelete }: Props) {
+export default function CardItem({ card, stats, highlighted, onEdit, onView, onDelete }: Props) {
   const publicUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/p/${card.public_id}`
       : "";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-4 shadow sm:p-6">
+    <div
+      className={cn(
+        "rounded-2xl border border-border bg-card p-4 shadow sm:p-6",
+        highlighted && "border-primary shadow-md ring-2 ring-primary"
+      )}
+    >
       <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{card.title}</h2>
 
       <p className="mt-3 text-foreground">

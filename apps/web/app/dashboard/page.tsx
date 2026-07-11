@@ -17,6 +17,10 @@ import {
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
 import { markFirstProfile } from "@/lib/onboarding/first-profile";
+import {
+  readLastCompletedProfile,
+  clearLastCompletedProfile,
+} from "@/lib/onboarding/last-completed-profile";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
@@ -33,6 +37,7 @@ export default function Dashboard() {
   const [viewStats, setViewStats] = useState<Record<string, CardViewStats>>({});
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
+  const [highlightedCardId, setHighlightedCardId] = useState<string | null>(null);
 
   useEffect(() => {
     if (authLoading) return;
@@ -55,6 +60,12 @@ export default function Dashboard() {
     if (!error && data) {
       setCards(data as Card[]);
       setViewStats(await getCardViewStats(supabase, data.map((card) => card.id)));
+
+      const lastCompleted = readLastCompletedProfile();
+      if (lastCompleted && data.some((card) => card.id === lastCompleted.cardId)) {
+        setHighlightedCardId(lastCompleted.cardId);
+        clearLastCompletedProfile();
+      }
     }
   }
 
@@ -122,6 +133,7 @@ export default function Dashboard() {
               key={card.id}
               card={card}
               stats={viewStats[card.id]}
+              highlighted={card.id === highlightedCardId}
               onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
               onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
               onDelete={deleteCard}
