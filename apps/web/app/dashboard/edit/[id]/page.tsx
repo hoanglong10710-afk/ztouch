@@ -2,6 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useParams, useRouter } from "next/navigation";
+import { PartyPopper } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
@@ -112,6 +113,26 @@ export default function EditPage() {
       </button>
 
       <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-4xl">✏️ Chỉnh sửa hồ sơ</h1>
+
+      {isFirstProfile && (
+        <section
+          aria-labelledby="first-profile-banner-title"
+          className="mb-6 rounded-lg border border-border bg-muted p-4 sm:mb-8"
+        >
+          <h2
+            id="first-profile-banner-title"
+            className="flex items-center gap-2 text-base font-semibold text-foreground"
+          >
+            <PartyPopper className="size-5 shrink-0" aria-hidden="true" />
+            🎉 Hồ sơ đầu tiên của bạn đã được tạo
+          </h2>
+
+          <div className="mt-2 space-y-1 text-sm text-muted-foreground">
+            <p>Điền đầy đủ thông tin rồi nhấn “Lưu thay đổi”.</p>
+            <p>Sau đó bạn sẽ có thể chia sẻ hồ sơ bằng QR hoặc NFC.</p>
+          </div>
+        </section>
+      )}
 
       <EditForm card={card} setCard={setCard} errors={errors} />
 
