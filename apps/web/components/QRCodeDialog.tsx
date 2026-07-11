@@ -1,7 +1,6 @@
 "use client";
 
 import { QrCode as QrCodeIcon } from "lucide-react";
-import QRCode from "react-qr-code";
 import {
   Dialog,
   DialogContent,
@@ -11,7 +10,7 @@ import {
   DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
-import CopyButton from "@/components/CopyButton";
+import QRCodePanel from "@/components/QRCodePanel";
 
 type Props = {
   publicId: string;
@@ -39,15 +38,7 @@ export default function QRCodeDialog({ publicId }: Props) {
           </DialogDescription>
         </DialogHeader>
 
-        <div className="flex justify-center rounded-lg bg-background p-4">
-          <QRCode value={url} size={200} />
-        </div>
-
-        <p className="break-all text-center text-sm text-muted-foreground">
-          {url}
-        </p>
-
-        <CopyButton value={url} />
+        <QRCodePanel url={url} />
       </DialogContent>
     </Dialog>
   );

@@ -36,3 +36,11 @@ export function readFirstProfile(): FirstProfileState | null {
     return null;
   }
 }
+
+export function clearFirstProfile(): void {
+  try {
+    sessionStorage.removeItem(STORAGE_KEY);
+  } catch {
+    // sessionStorage unavailable -- nothing else to do.
+  }
+}

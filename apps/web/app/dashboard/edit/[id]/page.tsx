@@ -6,12 +6,22 @@ import { PartyPopper } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import QRCodePanel from "@/components/QRCodePanel";
+import ShareButton from "@/components/ShareButton";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
 import { updateCard as updateCardAction } from "./actions";
 import { toast } from "@/components/ui/toast";
-import { readFirstProfile } from "@/lib/onboarding/first-profile";
+import { readFirstProfile, clearFirstProfile } from "@/lib/onboarding/first-profile";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -26,6 +36,7 @@ export default function EditPage() {
 
   const [card, setCard] = useState<Card | null>(null);
   const [initialCard, setInitialCard] = useState<Card | null>(null);
+  const [showReadyDialog, setShowReadyDialog] = useState(false);
 
   // sessionStorage never changes for the lifetime of this page, so there is
   // nothing to subscribe to -- this only needs a snapshot, read safely on
@@ -90,6 +101,11 @@ export default function EditPage() {
 
     setInitialCard(card);
     toast.success("✅ Đã lưu thành công!");
+
+    if (isFirstProfile) {
+      clearFirstProfile();
+      setShowReadyDialog(true);
+    }
   }
 
   const errors = useMemo(() => (card ? validateCard(card) : {}), [card]);
@@ -144,6 +160,30 @@ export default function EditPage() {
       >
         {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
       </Button>
+
+      <Dialog open={showReadyDialog} onOpenChange={setShowReadyDialog}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>🎉 Hồ sơ của bạn đã sẵn sàng</DialogTitle>
+            <DialogDescription>
+              Hồ sơ của bạn đã có thể chia sẻ bằng mã QR hoặc đường liên kết.
+            </DialogDescription>
+          </DialogHeader>
+
+          <QRCodePanel url={`${window.location.origin}/p/${card.public_id}`} />
+
+          <ShareButton
+            url={`${window.location.origin}/p/${card.public_id}`}
+            title={card.title ?? undefined}
+          />
+
+          <DialogFooter>
+            <Button type="button" onClick={() => setShowReadyDialog(false)}>
+              Đóng
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
     </main>
   );
 }
