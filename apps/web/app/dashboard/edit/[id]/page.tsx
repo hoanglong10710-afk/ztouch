@@ -177,6 +177,23 @@ export default function EditPage() {
             title={card.title ?? undefined}
           />
 
+          <div className="space-y-1">
+            <h3 className="text-sm font-semibold text-foreground">Viết vào thẻ NFC</h3>
+
+            <p className="text-sm text-muted-foreground">
+              Bạn có thể ghi chính đường liên kết này vào một thẻ NFC bằng các ứng dụng ghi
+              NFC phổ biến trên Android hoặc iPhone.
+            </p>
+
+            <p className="text-sm text-muted-foreground">
+              Sau khi ghi xong, chỉ cần chạm điện thoại vào thẻ để mở hồ sơ ngay lập tức.
+            </p>
+          </div>
+
+          <div className="rounded-lg border border-border bg-muted p-3 text-sm text-muted-foreground">
+            Đường dẫn được ghi chính là URL hiển thị phía trên.
+          </div>
+
           <DialogFooter>
             <Button type="button" onClick={() => setShowReadyDialog(false)}>
               Đóng
