@@ -115,7 +115,7 @@ export default function Dashboard() {
       <div className="mt-10 space-y-6">
 
         {cards.length === 0 ? (
-          <EmptyState />
+          <EmptyState onCreateCard={createCard} />
         ) : (
           cards.map((card) => (
             <CardItem
