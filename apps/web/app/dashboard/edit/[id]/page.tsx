@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useParams, useRouter } from "next/navigation";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
@@ -10,6 +10,7 @@ import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
 import { updateCard as updateCardAction } from "./actions";
 import { toast } from "@/components/ui/toast";
+import { readFirstProfile } from "@/lib/onboarding/first-profile";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -24,6 +25,15 @@ export default function EditPage() {
 
   const [card, setCard] = useState<Card | null>(null);
   const [initialCard, setInitialCard] = useState<Card | null>(null);
+
+  // sessionStorage never changes for the lifetime of this page, so there is
+  // nothing to subscribe to -- this only needs a snapshot, read safely on
+  // both server (no sessionStorage) and client via useSyncExternalStore.
+  const isFirstProfile = useSyncExternalStore(
+    () => () => {},
+    () => readFirstProfile()?.cardId === id,
+    () => false
+  );
 
   useEffect(() => {
     if (authLoading) return;
@@ -93,7 +103,7 @@ export default function EditPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-4 sm:p-10">
+    <main className="mx-auto max-w-3xl p-4 sm:p-10" data-first-profile={isFirstProfile}>
       <button
         onClick={() => router.back()}
         className="mb-4 rounded-lg bg-gray-200 px-4 py-2 sm:mb-6"

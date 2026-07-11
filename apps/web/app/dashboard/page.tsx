@@ -16,6 +16,7 @@ import {
   DialogTitle,
 } from "@/components/ui/dialog";
 import { toast } from "@/components/ui/toast";
+import { markFirstProfile } from "@/lib/onboarding/first-profile";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
@@ -67,6 +68,7 @@ export default function Dashboard() {
       return;
     }
 
+    markFirstProfile({ cardId: result.cardId, publicId: result.publicId });
     router.push(`/dashboard/edit/${result.cardId}`);
   }
 
