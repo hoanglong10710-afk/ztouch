@@ -7,6 +7,15 @@ import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { createCard as createCardAction } from "./actions";
 import { Button } from "@/components/ui/button";
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+import { toast } from "@/components/ui/toast";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
@@ -21,6 +30,8 @@ export default function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
   const [cardsLoading, setCardsLoading] = useState(true);
   const [viewStats, setViewStats] = useState<Record<string, CardViewStats>>({});
+  const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -52,27 +63,35 @@ export default function Dashboard() {
     const result = await createCardAction();
 
     if (!result.success) {
-      alert(result.error);
+      toast.error(result.error);
       return;
     }
 
     await loadCards(user.id);
 
-    alert("✅ Tạo hồ sơ thành công!");
+    toast.success("✅ Tạo hồ sơ thành công!");
   }
 
-  async function deleteCard(id: string) {
-    if (!user) return;
-    if (!confirm("Bạn có chắc muốn xóa?")) return;
+  function deleteCard(id: string) {
+    setDeleteTargetId(id);
+  }
+
+  async function confirmDeleteCard() {
+    if (!user || !deleteTargetId) return;
+
+    setDeleting(true);
 
     const { error } = await supabase
       .from("cards")
       .delete()
-      .eq("id", id)
+      .eq("id", deleteTargetId)
       .eq("owner_id", user.id);
 
+    setDeleting(false);
+    setDeleteTargetId(null);
+
     if (error) {
-      alert(error.message);
+      toast.error(error.message);
       return;
     }
 
@@ -122,6 +141,40 @@ export default function Dashboard() {
         <LogOut className="size-4" />
         Đăng xuất
       </Button>
+
+      <Dialog
+        open={deleteTargetId !== null}
+        onOpenChange={(open) => {
+          if (!open) setDeleteTargetId(null);
+        }}
+      >
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Xóa hồ sơ</DialogTitle>
+            <DialogDescription>Bạn có chắc muốn xóa?</DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter>
+            <Button
+              type="button"
+              variant="outline"
+              onClick={() => setDeleteTargetId(null)}
+              disabled={deleting}
+            >
+              Hủy
+            </Button>
+
+            <Button
+              type="button"
+              variant="destructive"
+              onClick={confirmDeleteCard}
+              disabled={deleting}
+            >
+              {deleting ? "Đang xóa..." : "Xóa"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
     </main>
   );

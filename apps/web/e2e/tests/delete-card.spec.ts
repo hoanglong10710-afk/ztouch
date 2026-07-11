@@ -11,12 +11,11 @@ test("deleting a card removes it from the dashboard list", async ({ page, contex
   await seedCard({ title: "Hồ sơ sẽ bị xóa" });
   await signIn(context, APP_URL);
 
-  page.on("dialog", (dialog) => dialog.accept());
-
   await page.goto("/dashboard");
   await expect(page.getByText("Hồ sơ sẽ bị xóa")).toBeVisible();
 
   await page.getByRole("button", { name: "Xóa" }).click();
+  await page.getByRole("dialog").getByRole("button", { name: "Xóa" }).click();
 
   await expect(page.getByText("Hồ sơ sẽ bị xóa")).not.toBeVisible();
 });

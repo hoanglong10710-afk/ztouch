@@ -9,6 +9,7 @@ import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
 import { updateCard as updateCardAction } from "./actions";
+import { toast } from "@/components/ui/toast";
 import type { Card } from "@/types/card";
 
 export default function EditPage() {
@@ -46,7 +47,7 @@ export default function EditPage() {
       if (ignore) return;
 
       if (error) {
-        alert(error.message);
+        toast.error(error.message);
         return;
       }
 
@@ -72,12 +73,12 @@ export default function EditPage() {
     setSaving(false);
 
     if (!result.success) {
-      alert(result.error);
+      toast.error(result.error);
       return;
     }
 
     setInitialCard(card);
-    alert("✅ Đã lưu thành công!");
+    toast.success("✅ Đã lưu thành công!");
   }
 
   const errors = useMemo(() => (card ? validateCard(card) : {}), [card]);
