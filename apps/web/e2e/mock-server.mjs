@@ -212,7 +212,7 @@ const server = http.createServer(async (req, res) => {
       }));
       cards.push(...inserted);
       if (wantsRepresentation(req)) {
-        sendJson(res, 201, inserted);
+        sendJson(res, 201, wantsSingleObject(req) ? inserted[0] : inserted);
       } else {
         res.writeHead(201, corsHeaders());
         res.end();

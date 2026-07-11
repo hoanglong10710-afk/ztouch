@@ -67,9 +67,7 @@ export default function Dashboard() {
       return;
     }
 
-    await loadCards(user.id);
-
-    toast.success("✅ Tạo hồ sơ thành công!");
+    router.push(`/dashboard/edit/${result.cardId}`);
   }
 
   function deleteCard(id: string) {

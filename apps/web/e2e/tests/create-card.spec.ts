@@ -7,14 +7,13 @@ test.beforeEach(async () => {
   await resetMockData();
 });
 
-test("creating a card adds it to the dashboard list", async ({ page, context }) => {
+test("creating a card redirects straight to its edit page", async ({ page, context }) => {
   await signIn(context, APP_URL);
   await page.goto("/dashboard");
 
-  page.on("dialog", (dialog) => dialog.accept());
-
   await page.getByRole("button", { name: "Tạo hồ sơ mới" }).click();
 
-  await expect(page.getByText("Hồ sơ mới")).toBeVisible();
-  await expect(page.getByText(/Công khai$/)).toBeVisible();
+  await expect(page).toHaveURL(/\/dashboard\/edit\/.+/);
+  await expect(page.getByLabel("Tiêu đề")).toHaveValue("Hồ sơ mới");
+  await expect(page.getByRole("switch", { name: "Công khai hồ sơ" })).toBeChecked();
 });
