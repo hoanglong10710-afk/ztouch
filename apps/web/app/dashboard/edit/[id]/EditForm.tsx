@@ -68,7 +68,7 @@ export default function EditForm({ card, setCard, errors }: Props) {
   }
 
   return (
-    <div className="mt-8 space-y-10">
+    <div className="mt-6 space-y-8 sm:mt-8 sm:space-y-10">
       <section className="space-y-6">
         <h2 className="text-lg font-semibold">Thông tin cơ bản</h2>
 

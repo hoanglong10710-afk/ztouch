@@ -25,8 +25,8 @@ export default function LoginPage() {
   }
 
   return (
-    <main className="min-h-screen flex items-center justify-center bg-slate-100">
-      <div className="w-[420px] rounded-2xl bg-white shadow-xl p-10">
+    <main className="min-h-screen flex items-center justify-center bg-slate-100 p-4">
+      <div className="w-full max-w-[420px] rounded-2xl bg-white shadow-xl p-6 sm:p-10">
         <h1 className="text-4xl font-bold text-center">
           SUNPEO
         </h1>

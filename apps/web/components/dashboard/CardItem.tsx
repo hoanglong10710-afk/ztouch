@@ -20,8 +20,8 @@ export default function CardItem({ card, stats, onEdit, onView, onDelete }: Prop
       : "";
 
   return (
-    <div className="rounded-2xl border border-border bg-card p-6 shadow">
-      <h2 className="text-3xl font-bold text-foreground">{card.title}</h2>
+    <div className="rounded-2xl border border-border bg-card p-4 shadow sm:p-6">
+      <h2 className="text-2xl font-bold text-foreground sm:text-3xl">{card.title}</h2>
 
       <p className="mt-3 text-foreground">
         <b>Public ID:</b> {card.public_id}
@@ -44,22 +44,29 @@ export default function CardItem({ card, stats, onEdit, onView, onDelete }: Prop
         </p>
       )}
 
-      <div className="mt-6 flex flex-wrap gap-3">
-        <Button type="button" variant="secondary" onClick={() => onEdit(card.id)}>
-          <Pencil className="size-4" />
-          Sửa
-        </Button>
+      <div className="mt-4 space-y-2 sm:mt-6">
+        <div className="grid grid-cols-2 gap-2 [&>button]:w-full sm:flex sm:flex-wrap sm:gap-3 sm:[&>button]:w-auto">
+          <Button type="button" variant="secondary" onClick={() => onEdit(card.id)}>
+            <Pencil className="size-4" />
+            Sửa
+          </Button>
 
-        <Button type="button" variant="outline" onClick={() => onView(card.public_id)}>
-          <Eye className="size-4" />
-          Xem
-        </Button>
+          <Button type="button" variant="outline" onClick={() => onView(card.public_id)}>
+            <Eye className="size-4" />
+            Xem
+          </Button>
 
-        <QRCodeDialog publicId={card.public_id} />
+          <QRCodeDialog publicId={card.public_id} />
 
-        <ShareButton url={publicUrl} title={card.title ?? undefined} />
+          <ShareButton url={publicUrl} title={card.title ?? undefined} />
+        </div>
 
-        <Button type="button" variant="destructive" onClick={() => onDelete(card.id)}>
+        <Button
+          type="button"
+          variant="destructive"
+          className="w-full sm:w-auto"
+          onClick={() => onDelete(card.id)}
+        >
           <Trash2 className="size-4" />
           Xóa
         </Button>

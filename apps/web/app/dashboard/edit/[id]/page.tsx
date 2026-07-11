@@ -93,15 +93,15 @@ export default function EditPage() {
   }
 
   return (
-    <main className="mx-auto max-w-3xl p-10">
+    <main className="mx-auto max-w-3xl p-4 sm:p-10">
       <button
         onClick={() => router.back()}
-        className="mb-6 rounded-lg bg-gray-200 px-4 py-2"
+        className="mb-4 rounded-lg bg-gray-200 px-4 py-2 sm:mb-6"
       >
         ← Quay lại
       </button>
 
-      <h1 className="mb-8 text-4xl font-bold">✏️ Chỉnh sửa hồ sơ</h1>
+      <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-4xl">✏️ Chỉnh sửa hồ sơ</h1>
 
       <EditForm card={card} setCard={setCard} errors={errors} />
 
@@ -109,7 +109,7 @@ export default function EditPage() {
         onClick={saveCard}
         disabled={!canSave}
         size="lg"
-        className="mt-6"
+        className="mt-6 w-full sm:w-auto"
       >
         {saving ? "Đang lưu..." : "💾 Lưu thay đổi"}
       </Button>

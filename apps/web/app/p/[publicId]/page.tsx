@@ -100,8 +100,8 @@ export default async function PublicPage({ params, searchParams }: Props) {
 
   return (
     <main className="min-h-screen bg-muted">
-      <div className="mx-auto max-w-xl p-8">
-        <div className="rounded-2xl border border-border bg-card p-8 shadow-lg">
+      <div className="mx-auto max-w-xl p-4 sm:p-8">
+        <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
           <ProfileHeader
             name={card.display_name || card.title || ""}
             jobTitle={card.job_title}
@@ -109,7 +109,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
             avatarUrl={isSafeUrl(card.avatar_url) ? card.avatar_url : null}
           />
 
-          <div className="mt-8 space-y-3">
+          <div className="mt-6 space-y-3 sm:mt-8">
             {card.phone && (
               <InfoButton href={`tel:${card.phone}`} icon={Phone} label={card.phone} />
             )}

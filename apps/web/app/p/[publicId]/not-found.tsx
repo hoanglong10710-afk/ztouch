@@ -2,8 +2,8 @@ import Link from "next/link";
 
 export default function NotFound() {
   return (
-    <main className="flex min-h-screen items-center justify-center bg-muted p-8">
-      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-8 text-center shadow-lg">
+    <main className="flex min-h-screen items-center justify-center bg-muted p-4 sm:p-8">
+      <div className="w-full max-w-md rounded-2xl border border-border bg-card p-6 text-center shadow-lg sm:p-8">
         <h1 className="text-2xl font-bold text-foreground">Không tìm thấy hồ sơ</h1>
 
         <p className="mt-3 text-muted-foreground">

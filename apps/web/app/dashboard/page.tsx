@@ -108,11 +108,11 @@ export default function Dashboard() {
   }
 
   return (
-    <main className="mx-auto max-w-4xl p-10">
+    <main className="mx-auto max-w-4xl p-4 sm:p-10">
 
       <DashboardHeader userEmail={user.email} onCreateCard={createCard} />
 
-      <div className="mt-10 space-y-6">
+      <div className="mt-6 space-y-4 sm:mt-10 sm:space-y-6">
 
         {cards.length === 0 ? (
           <EmptyState onCreateCard={createCard} />
@@ -135,7 +135,7 @@ export default function Dashboard() {
         type="button"
         variant="destructive"
         size="lg"
-        className="mt-12"
+        className="mt-8 sm:mt-12"
         onClick={logout}
       >
         <LogOut className="size-4" />
