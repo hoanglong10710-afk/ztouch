@@ -11,7 +11,10 @@ test("creating a card redirects straight to its edit page", async ({ page, conte
   await signIn(context, APP_URL);
   await page.goto("/dashboard");
 
-  await page.getByRole("button", { name: "Tạo hồ sơ mới" }).click();
+  // Both the header and the empty-state CTA render "Tạo hồ sơ mới" when
+  // there are no cards yet -- pick the first (the header's) deterministically.
+  await page.getByRole("button", { name: "Tạo hồ sơ mới" }).first().click();
+  await page.getByRole("button", { name: "Tiếp tục" }).click();
 
   await expect(page).toHaveURL(/\/dashboard\/edit\/.+/);
   await expect(page.getByLabel("Tiêu đề")).toHaveValue("Hồ sơ mới");

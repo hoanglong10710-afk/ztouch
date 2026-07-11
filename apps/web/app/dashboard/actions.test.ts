@@ -39,7 +39,7 @@ describe("createCard", () => {
     const supabaseMock = makeSupabaseMock({ user: null });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await createCard();
+    const result = await createCard("personal");
 
     expect(result).toEqual({
       success: false,
@@ -55,9 +55,21 @@ describe("createCard", () => {
     });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await createCard();
+    const result = await createCard("personal");
 
     expect(result).toEqual({ success: false, error: "boom" });
+  });
+
+  it("rejects a profile type that isn't personal or rescue", async () => {
+    const supabaseMock = makeSupabaseMock({
+      user: { id: "user-1", user_metadata: {} },
+    });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const result = await createCard("business");
+
+    expect(result).toEqual({ success: false, error: "Loại hồ sơ không hợp lệ" });
+    expect(supabaseMock.from).not.toHaveBeenCalled();
   });
 
   it("returns success with the new card's id and public_id", async () => {
@@ -67,7 +79,7 @@ describe("createCard", () => {
     });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await createCard();
+    const result = await createCard("personal");
 
     expect(result.success).toBe(true);
     if (!result.success) throw new Error("expected success");
@@ -83,5 +95,21 @@ describe("createCard", () => {
     expect(insertedRow.is_public).toBe(true);
     expect(insertedRow.avatar_url).toBe("https://example.com/a.png");
     expect(insertedRow.public_id).toBe(result.publicId);
+    expect(insertedRow.profile_type).toBe("personal");
+  });
+
+  it("accepts rescue as a valid profile type", async () => {
+    const supabaseMock = makeSupabaseMock({
+      user: { id: "user-1", user_metadata: {} },
+      insertedId: "card-99",
+    });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const result = await createCard("rescue");
+
+    expect(result.success).toBe(true);
+
+    const insertedRow = supabaseMock.__insert.mock.calls[0][0];
+    expect(insertedRow.profile_type).toBe("rescue");
   });
 });

@@ -1,8 +1,10 @@
+export type ProfileType = "personal" | "rescue";
+
 export interface Card {
   id: string;
   owner_id: string;
   public_id: string;
-  profile_type: string;
+  profile_type: ProfileType;
   status: string;
   is_public: boolean;
   title: string | null;

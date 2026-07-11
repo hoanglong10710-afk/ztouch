@@ -3,9 +3,10 @@
 // project, and does not touch RLS, Storage policies, or the database schema.
 //
 // It implements just enough of the Auth (`/auth/v1/user`) and PostgREST
-// (`/rest/v1/cards`) surface for this app's existing code paths (proxy.ts,
-// lib/supabase/*, the dashboard/edit Server Actions, and the public profile
-// route) to work unmodified against a fake backend.
+// (`/rest/v1/cards`, `/rest/v1/rescue_profiles`, `/rest/v1/emergency_contacts`)
+// surface for this app's existing code paths (proxy.ts, lib/supabase/*, the
+// dashboard/edit Server Actions, and the public profile route) to work
+// unmodified against a fake backend.
 import http from "node:http";
 
 const FAKE_USER = {
@@ -33,6 +34,8 @@ const FAKE_USER = {
 const FAKE_ACCESS_TOKEN = "e2e-fake-access-token";
 
 let cards = [];
+let rescueProfiles = [];
+let emergencyContacts = [];
 let nextId = 1;
 
 function readBody(req) {
@@ -123,6 +126,8 @@ const server = http.createServer(async (req, res) => {
   // --- Test-only admin endpoints (never part of the real Supabase API) ---
   if (url.pathname === "/__e2e__/reset" && req.method === "POST") {
     cards = [];
+    rescueProfiles = [];
+    emergencyContacts = [];
     nextId = 1;
     sendJson(res, 200, { ok: true });
     return;
@@ -253,6 +258,149 @@ const server = http.createServer(async (req, res) => {
       cards = remaining;
       if (wantsRepresentation(req)) {
         sendJson(res, 200, deleted);
+      } else {
+        res.writeHead(204, corsHeaders());
+        res.end();
+      }
+      return;
+    }
+  }
+
+  // --- PostgREST: /rest/v1/rescue_profiles ---
+  // Mirrors the /rest/v1/cards block above (GET/POST/PATCH) rather than a
+  // shared helper, so the already-covered cards behavior can't regress.
+  // rescue_profiles has no DELETE call site in the app yet.
+  if (url.pathname === "/rest/v1/rescue_profiles") {
+    const { filters, order } = parseFilters(url.searchParams);
+
+    if (req.method === "GET") {
+      let rows = rescueProfiles.filter((row) => matchesFilters(row, filters));
+      if (order) {
+        rows = rows.slice().sort((a, b) => {
+          const dir = order.direction === "desc" ? -1 : 1;
+          return a[order.column] > b[order.column] ? dir : -dir;
+        });
+      }
+
+      if (wantsSingleObject(req)) {
+        if (rows.length !== 1) {
+          sendJson(res, 406, {
+            code: "PGRST116",
+            details: `Results contain ${rows.length} rows`,
+            hint: null,
+            message: "JSON object requested, multiple (or no) rows returned",
+          });
+          return;
+        }
+        sendJson(res, 200, rows[0]);
+        return;
+      }
+
+      sendJson(res, 200, rows);
+      return;
+    }
+
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      const rowsToInsert = Array.isArray(body) ? body : [body];
+      const inserted = rowsToInsert.map((row) => ({
+        created_at: row.created_at || new Date().toISOString(),
+        updated_at: row.updated_at || new Date().toISOString(),
+        ...row,
+      }));
+      rescueProfiles.push(...inserted);
+      if (wantsRepresentation(req)) {
+        sendJson(res, 201, wantsSingleObject(req) ? inserted[0] : inserted);
+      } else {
+        res.writeHead(201, corsHeaders());
+        res.end();
+      }
+      return;
+    }
+
+    if (req.method === "PATCH") {
+      const body = (await readBody(req)) || {};
+      const updated = [];
+      rescueProfiles = rescueProfiles.map((row) => {
+        if (matchesFilters(row, filters)) {
+          const merged = { ...row, ...body };
+          updated.push(merged);
+          return merged;
+        }
+        return row;
+      });
+      if (wantsRepresentation(req)) {
+        sendJson(res, 200, updated);
+      } else {
+        res.writeHead(204, corsHeaders());
+        res.end();
+      }
+      return;
+    }
+  }
+
+  // --- PostgREST: /rest/v1/emergency_contacts ---
+  if (url.pathname === "/rest/v1/emergency_contacts") {
+    const { filters, order } = parseFilters(url.searchParams);
+
+    if (req.method === "GET") {
+      let rows = emergencyContacts.filter((row) => matchesFilters(row, filters));
+      if (order) {
+        rows = rows.slice().sort((a, b) => {
+          const dir = order.direction === "desc" ? -1 : 1;
+          return a[order.column] > b[order.column] ? dir : -dir;
+        });
+      }
+
+      if (wantsSingleObject(req)) {
+        if (rows.length !== 1) {
+          sendJson(res, 406, {
+            code: "PGRST116",
+            details: `Results contain ${rows.length} rows`,
+            hint: null,
+            message: "JSON object requested, multiple (or no) rows returned",
+          });
+          return;
+        }
+        sendJson(res, 200, rows[0]);
+        return;
+      }
+
+      sendJson(res, 200, rows);
+      return;
+    }
+
+    if (req.method === "POST") {
+      const body = await readBody(req);
+      const rowsToInsert = Array.isArray(body) ? body : [body];
+      const inserted = rowsToInsert.map((row) => ({
+        id: row.id || `contact-${nextId++}`,
+        created_at: row.created_at || new Date().toISOString(),
+        ...row,
+      }));
+      emergencyContacts.push(...inserted);
+      if (wantsRepresentation(req)) {
+        sendJson(res, 201, wantsSingleObject(req) ? inserted[0] : inserted);
+      } else {
+        res.writeHead(201, corsHeaders());
+        res.end();
+      }
+      return;
+    }
+
+    if (req.method === "PATCH") {
+      const body = (await readBody(req)) || {};
+      const updated = [];
+      emergencyContacts = emergencyContacts.map((row) => {
+        if (matchesFilters(row, filters)) {
+          const merged = { ...row, ...body };
+          updated.push(merged);
+          return merged;
+        }
+        return row;
+      });
+      if (wantsRepresentation(req)) {
+        sendJson(res, 200, updated);
       } else {
         res.writeHead(204, corsHeaders());
         res.end();

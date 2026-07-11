@@ -19,11 +19,18 @@ import ShareButton from "@/components/ShareButton";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
+import {
+  validateRescueForm,
+  hasErrors as hasRescueErrors,
+  EMPTY_RESCUE_FORM,
+} from "@/lib/validation/rescue";
 import { updateCard as updateCardAction } from "./actions";
+import { upsertRescueProfile, upsertPrimaryEmergencyContact } from "./rescue-actions";
 import { toast } from "@/components/ui/toast";
 import { readFirstProfile, clearFirstProfile } from "@/lib/onboarding/first-profile";
 import { markLastCompletedProfile } from "@/lib/onboarding/last-completed-profile";
 import type { Card } from "@/types/card";
+import type { RescueFormValues } from "@/lib/validation/rescue";
 
 export default function EditPage() {
   const params = useParams();
@@ -37,6 +44,9 @@ export default function EditPage() {
 
   const [card, setCard] = useState<Card | null>(null);
   const [initialCard, setInitialCard] = useState<Card | null>(null);
+  const [rescueForm, setRescueForm] = useState<RescueFormValues>(EMPTY_RESCUE_FORM);
+  const [initialRescueForm, setInitialRescueForm] =
+    useState<RescueFormValues>(EMPTY_RESCUE_FORM);
   const [showReadyDialog, setShowReadyDialog] = useState(false);
 
   // sessionStorage never changes for the lifetime of this page, so there is
@@ -76,6 +86,34 @@ export default function EditPage() {
 
       setCard(data as Card);
       setInitialCard(data as Card);
+
+      if (data.profile_type === "rescue") {
+        const [{ data: rescueProfile }, { data: contact }] = await Promise.all([
+          supabase.from("rescue_profiles").select("*").eq("card_id", id).maybeSingle(),
+          supabase
+            .from("emergency_contacts")
+            .select("*")
+            .eq("card_id", id)
+            .eq("is_primary", true)
+            .maybeSingle(),
+        ]);
+
+        if (ignore) return;
+
+        const loadedRescueForm: RescueFormValues = {
+          bloodType: rescueProfile?.blood_type ?? "",
+          allergies: rescueProfile?.allergies ?? "",
+          medicalConditions: rescueProfile?.medical_conditions ?? "",
+          medications: rescueProfile?.medications ?? "",
+          contactFullName: contact?.full_name ?? "",
+          contactRelationship: contact?.relationship ?? "",
+          contactPhone: contact?.phone ?? "",
+        };
+
+        setRescueForm(loadedRescueForm);
+        setInitialRescueForm(loadedRescueForm);
+      }
+
       setLoading(false);
     }
 
@@ -93,14 +131,42 @@ export default function EditPage() {
 
     const result = await updateCardAction(id, card);
 
-    setSaving(false);
-
     if (!result.success) {
+      setSaving(false);
       toast.error(result.error);
       return;
     }
 
+    if (card.profile_type === "rescue") {
+      const rescueProfileResult = await upsertRescueProfile(id, {
+        bloodType: rescueForm.bloodType,
+        allergies: rescueForm.allergies,
+        medicalConditions: rescueForm.medicalConditions,
+        medications: rescueForm.medications,
+      });
+
+      if (!rescueProfileResult.success) {
+        setSaving(false);
+        toast.error(rescueProfileResult.error);
+        return;
+      }
+
+      const contactResult = await upsertPrimaryEmergencyContact(id, {
+        fullName: rescueForm.contactFullName,
+        relationship: rescueForm.contactRelationship,
+        phone: rescueForm.contactPhone,
+      });
+
+      if (!contactResult.success) {
+        setSaving(false);
+        toast.error(contactResult.error);
+        return;
+      }
+    }
+
+    setSaving(false);
     setInitialCard(card);
+    setInitialRescueForm(rescueForm);
     toast.success("✅ Đã lưu thành công!");
 
     if (isFirstProfile) {
@@ -110,11 +176,18 @@ export default function EditPage() {
   }
 
   const errors = useMemo(() => (card ? validateCard(card) : {}), [card]);
-  const isDirty = useMemo(
-    () => JSON.stringify(card) !== JSON.stringify(initialCard),
-    [card, initialCard]
+  const rescueErrors = useMemo(
+    () => (card?.profile_type === "rescue" ? validateRescueForm(rescueForm) : {}),
+    [card, rescueForm]
   );
-  const canSave = isDirty && !hasErrors(errors) && !saving;
+  const isDirty = useMemo(() => {
+    const cardChanged = JSON.stringify(card) !== JSON.stringify(initialCard);
+    const rescueChanged =
+      card?.profile_type === "rescue" &&
+      JSON.stringify(rescueForm) !== JSON.stringify(initialRescueForm);
+    return cardChanged || rescueChanged;
+  }, [card, initialCard, rescueForm, initialRescueForm]);
+  const canSave = isDirty && !hasErrors(errors) && !hasRescueErrors(rescueErrors) && !saving;
 
   if (authLoading || loading || !card) {
     return <LoadingScreen />;
@@ -151,7 +224,14 @@ export default function EditPage() {
         </section>
       )}
 
-      <EditForm card={card} setCard={setCard} errors={errors} />
+      <EditForm
+        card={card}
+        setCard={setCard}
+        errors={errors}
+        rescueForm={rescueForm}
+        setRescueForm={setRescueForm}
+        rescueErrors={rescueErrors}
+      />
 
       <Button
         onClick={saveCard}

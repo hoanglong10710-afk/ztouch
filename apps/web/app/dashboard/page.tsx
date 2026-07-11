@@ -25,8 +25,9 @@ import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
 import EmptyState from "@/components/dashboard/EmptyState";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
+import ProfileTypeSelector from "@/components/dashboard/ProfileTypeSelector";
 import { getCardViewStats, type CardViewStats } from "@/lib/analytics/get-card-view-stats";
-import type { Card } from "@/types/card";
+import type { Card, ProfileType } from "@/types/card";
 
 export default function Dashboard() {
   const router = useRouter();
@@ -38,6 +39,7 @@ export default function Dashboard() {
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [highlightedCardId, setHighlightedCardId] = useState<string | null>(null);
+  const [showTypeDialog, setShowTypeDialog] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -69,16 +71,21 @@ export default function Dashboard() {
     }
   }
 
-  async function createCard() {
+  function openCreateDialog() {
+    setShowTypeDialog(true);
+  }
+
+  async function createCard(profileType: ProfileType) {
     if (!user) return;
 
-    const result = await createCardAction();
+    const result = await createCardAction(profileType);
 
     if (!result.success) {
       toast.error(result.error);
       return;
     }
 
+    setShowTypeDialog(false);
     markFirstProfile({ cardId: result.cardId, publicId: result.publicId });
     router.push(`/dashboard/edit/${result.cardId}`);
   }
@@ -121,12 +128,12 @@ export default function Dashboard() {
   return (
     <main className="mx-auto max-w-4xl p-4 sm:p-10">
 
-      <DashboardHeader userEmail={user.email} onCreateCard={createCard} />
+      <DashboardHeader userEmail={user.email} onCreateCard={openCreateDialog} />
 
       <div className="mt-6 space-y-4 sm:mt-10 sm:space-y-6">
 
         {cards.length === 0 ? (
-          <EmptyState onCreateCard={createCard} />
+          <EmptyState onCreateCard={openCreateDialog} />
         ) : (
           cards.map((card) => (
             <CardItem
@@ -186,6 +193,13 @@ export default function Dashboard() {
             </Button>
           </DialogFooter>
         </DialogContent>
+      </Dialog>
+
+      <Dialog open={showTypeDialog} onOpenChange={setShowTypeDialog}>
+        <ProfileTypeSelector
+          onCancel={() => setShowTypeDialog(false)}
+          onContinue={createCard}
+        />
       </Dialog>
 
     </main>

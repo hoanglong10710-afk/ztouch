@@ -8,11 +8,16 @@ import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import AvatarUploader from "@/components/dashboard/AvatarUploader";
+import { PROFILE_TYPE_LABELS } from "@/lib/profile-type";
+import type { RescueFormErrors, RescueFormValues } from "@/lib/validation/rescue";
 
 type Props = {
   card: Card;
   setCard: (card: Card) => void;
   errors: CardFormErrors;
+  rescueForm: RescueFormValues;
+  setRescueForm: (values: RescueFormValues) => void;
+  rescueErrors: RescueFormErrors;
 };
 
 type FieldDef = { name: CardStringField; label: string };
@@ -40,10 +45,24 @@ const SOCIAL_FIELDS: FieldDef[] = [
   { name: "github", label: "GitHub" },
 ];
 
-export default function EditForm({ card, setCard, errors }: Props) {
+export default function EditForm({
+  card,
+  setCard,
+  errors,
+  rescueForm,
+  setRescueForm,
+  rescueErrors,
+}: Props) {
   function updateField(name: CardStringField, value: string) {
     setCard({
       ...card,
+      [name]: value,
+    });
+  }
+
+  function updateRescueField(name: keyof RescueFormValues, value: string) {
+    setRescueForm({
+      ...rescueForm,
       [name]: value,
     });
   }
@@ -73,6 +92,11 @@ export default function EditForm({ card, setCard, errors }: Props) {
         <h2 className="text-lg font-semibold">Thông tin cơ bản</h2>
 
         <div className="space-y-6">
+          <div className="space-y-1.5">
+            <Label>Loại hồ sơ</Label>
+            <p className="text-foreground">{PROFILE_TYPE_LABELS[card.profile_type]}</p>
+          </div>
+
           <AvatarUploader
             cardId={card.id}
             avatarUrl={card.avatar_url}
@@ -125,6 +149,100 @@ export default function EditForm({ card, setCard, errors }: Props) {
 
         <div className="space-y-6">{SOCIAL_FIELDS.map(renderField)}</div>
       </section>
+
+      {card.profile_type === "rescue" && (
+        <>
+          <Separator />
+
+          <section className="space-y-6">
+            <h2 className="text-lg font-semibold">Thông tin y tế</h2>
+
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_blood_type">Nhóm máu</Label>
+                <Input
+                  id="rescue_blood_type"
+                  value={rescueForm.bloodType}
+                  onChange={(e) => updateRescueField("bloodType", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_allergies">Dị ứng</Label>
+                <Textarea
+                  id="rescue_allergies"
+                  rows={3}
+                  value={rescueForm.allergies}
+                  onChange={(e) => updateRescueField("allergies", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_medical_conditions">Tình trạng bệnh lý</Label>
+                <Textarea
+                  id="rescue_medical_conditions"
+                  rows={3}
+                  value={rescueForm.medicalConditions}
+                  onChange={(e) => updateRescueField("medicalConditions", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_medications">Thuốc đang sử dụng</Label>
+                <Textarea
+                  id="rescue_medications"
+                  rows={3}
+                  value={rescueForm.medications}
+                  onChange={(e) => updateRescueField("medications", e.target.value)}
+                />
+              </div>
+            </div>
+          </section>
+
+          <Separator />
+
+          <section className="space-y-6">
+            <h2 className="text-lg font-semibold">Liên hệ khẩn cấp</h2>
+
+            <div className="space-y-6">
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_contact_full_name">Họ tên</Label>
+                <Input
+                  id="rescue_contact_full_name"
+                  value={rescueForm.contactFullName}
+                  aria-invalid={!!rescueErrors.contactFullName}
+                  onChange={(e) => updateRescueField("contactFullName", e.target.value)}
+                />
+                {rescueErrors.contactFullName && (
+                  <p className="text-sm text-destructive">{rescueErrors.contactFullName}</p>
+                )}
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_contact_relationship">Mối quan hệ</Label>
+                <Input
+                  id="rescue_contact_relationship"
+                  value={rescueForm.contactRelationship}
+                  onChange={(e) => updateRescueField("contactRelationship", e.target.value)}
+                />
+              </div>
+
+              <div className="space-y-1.5">
+                <Label htmlFor="rescue_contact_phone">Số điện thoại</Label>
+                <Input
+                  id="rescue_contact_phone"
+                  value={rescueForm.contactPhone}
+                  aria-invalid={!!rescueErrors.contactPhone}
+                  onChange={(e) => updateRescueField("contactPhone", e.target.value)}
+                />
+                {rescueErrors.contactPhone && (
+                  <p className="text-sm text-destructive">{rescueErrors.contactPhone}</p>
+                )}
+              </div>
+            </div>
+          </section>
+        </>
+      )}
     </div>
   );
 }

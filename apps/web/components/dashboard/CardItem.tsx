@@ -5,6 +5,7 @@ import { Button } from "@/components/ui/button";
 import QRCodeDialog from "@/components/QRCodeDialog";
 import ShareButton from "@/components/ShareButton";
 import { cn } from "@/lib/utils";
+import { PROFILE_TYPE_LABELS } from "@/lib/profile-type";
 
 type Props = {
   card: Card;
@@ -34,9 +35,7 @@ export default function CardItem({ card, stats, highlighted, onEdit, onView, onD
         <b>Public ID:</b> {card.public_id}
       </p>
 
-      <p className="text-foreground">
-        <b>Loại:</b> {card.profile_type}
-      </p>
+      <p className="text-foreground">{PROFILE_TYPE_LABELS[card.profile_type]}</p>
 
       <p className="text-foreground">
         {card.is_public ? "🟢 Công khai" : "🔒 Riêng tư"}
