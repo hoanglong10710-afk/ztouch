@@ -165,6 +165,23 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === "/__e2e__/seed-emergency-contact" && req.method === "POST") {
+    const body = (await readBody(req)) || {};
+    const row = {
+      id: body.id || `contact-${nextId++}`,
+      card_id: body.card_id,
+      full_name: body.full_name ?? "",
+      relationship: body.relationship ?? null,
+      phone: body.phone ?? "",
+      priority: body.priority ?? 0,
+      is_primary: body.is_primary ?? false,
+      created_at: body.created_at || new Date().toISOString(),
+    };
+    emergencyContacts.push(row);
+    sendJson(res, 201, row);
+    return;
+  }
+
   // --- Auth: GET /auth/v1/user ---
   if (url.pathname === "/auth/v1/user" && req.method === "GET") {
     const authHeader = req.headers["authorization"] || "";
@@ -427,6 +444,49 @@ const server = http.createServer(async (req, res) => {
       }
       return;
     }
+  }
+
+  // --- PostgREST RPC: /rest/v1/rpc/get_primary_emergency_contact ---
+  // Mirrors what the real get_primary_emergency_contact(public_id) SECURITY
+  // DEFINER function does (see supabase/migrations/
+  // 20260712090000_public_primary_emergency_contact_function.sql): only the
+  // primary contact of a public, active card is ever returned.
+  if (
+    url.pathname === "/rest/v1/rpc/get_primary_emergency_contact" &&
+    req.method === "POST"
+  ) {
+    const body = (await readBody(req)) || {};
+    const card = cards.find(
+      (row) =>
+        row.public_id === body.public_id && row.is_public === true && row.status === "active"
+    );
+
+    const rows = card
+      ? emergencyContacts
+          .filter((row) => row.card_id === card.id && row.is_primary === true)
+          .map((row) => ({
+            full_name: row.full_name,
+            relationship: row.relationship,
+            phone: row.phone,
+          }))
+      : [];
+
+    if (wantsSingleObject(req)) {
+      if (rows.length !== 1) {
+        sendJson(res, 406, {
+          code: "PGRST116",
+          details: `Results contain ${rows.length} rows`,
+          hint: null,
+          message: "JSON object requested, multiple (or no) rows returned",
+        });
+        return;
+      }
+      sendJson(res, 200, rows[0]);
+      return;
+    }
+
+    sendJson(res, 200, rows);
+    return;
   }
 
   sendJson(res, 404, { message: "Not found in mock server", path: url.pathname });

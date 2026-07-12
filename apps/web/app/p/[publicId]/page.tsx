@@ -6,7 +6,7 @@ import type { Metadata } from "next";
 import ProfileHeader from "@/components/public/ProfileHeader";
 import InfoButton from "@/components/public/InfoButton";
 import SocialButton from "@/components/public/SocialButton";
-import { getCardByPublicId } from "./data";
+import { getCardByPublicId, getPrimaryEmergencyContact } from "./data";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { recordCardView } from "@/lib/analytics/record-card-view";
 import type { CardStringField } from "@/types/card";
@@ -86,6 +86,11 @@ export default async function PublicPage({ params, searchParams }: Props) {
     notFound();
   }
 
+  const { contact } =
+    card.profile_type === "rescue"
+      ? await getPrimaryEmergencyContact(publicId)
+      : { contact: null };
+
   // Request data must be read here, during render — after() cannot call
   // cookies()/headers() itself from inside a Server Component (see
   // lib/analytics/record-card-view.ts for why a client built from cookies()
@@ -108,6 +113,19 @@ export default async function PublicPage({ params, searchParams }: Props) {
             bio={card.bio}
             avatarUrl={isSafeUrl(card.avatar_url) ? card.avatar_url : null}
           />
+
+          {card.profile_type === "rescue" && contact && (
+            <div className="mt-6 space-y-3 sm:mt-8">
+              <div className="text-center">
+                <p className="font-medium text-foreground">{contact.full_name}</p>
+                {contact.relationship && (
+                  <p className="text-sm text-muted-foreground">{contact.relationship}</p>
+                )}
+              </div>
+
+              <InfoButton href={`tel:${contact.phone}`} icon={Phone} label="Gọi ngay" />
+            </div>
+          )}
 
           <div className="mt-6 space-y-3 sm:mt-8">
             {card.phone && (
