@@ -407,6 +407,26 @@ const server = http.createServer(async (req, res) => {
       }
       return;
     }
+
+    if (req.method === "DELETE") {
+      const remaining = [];
+      const deleted = [];
+      for (const row of emergencyContacts) {
+        if (matchesFilters(row, filters)) {
+          deleted.push(row);
+        } else {
+          remaining.push(row);
+        }
+      }
+      emergencyContacts = remaining;
+      if (wantsRepresentation(req)) {
+        sendJson(res, 200, deleted);
+      } else {
+        res.writeHead(204, corsHeaders());
+        res.end();
+      }
+      return;
+    }
   }
 
   sendJson(res, 404, { message: "Not found in mock server", path: url.pathname });

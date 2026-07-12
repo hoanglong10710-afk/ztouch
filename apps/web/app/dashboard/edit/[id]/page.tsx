@@ -21,16 +21,17 @@ import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
 import {
   validateRescueForm,
+  validateEmergencyContact,
   hasErrors as hasRescueErrors,
   EMPTY_RESCUE_FORM,
 } from "@/lib/validation/rescue";
 import { updateCard as updateCardAction } from "./actions";
-import { upsertRescueProfile, upsertPrimaryEmergencyContact } from "./rescue-actions";
+import { upsertRescueProfile, saveEmergencyContacts } from "./rescue-actions";
 import { toast } from "@/components/ui/toast";
 import { readFirstProfile, clearFirstProfile } from "@/lib/onboarding/first-profile";
 import { markLastCompletedProfile } from "@/lib/onboarding/last-completed-profile";
 import type { Card } from "@/types/card";
-import type { RescueFormValues } from "@/lib/validation/rescue";
+import type { RescueFormValues, EmergencyContactFormValues } from "@/lib/validation/rescue";
 
 export default function EditPage() {
   const params = useParams();
@@ -47,6 +48,8 @@ export default function EditPage() {
   const [rescueForm, setRescueForm] = useState<RescueFormValues>(EMPTY_RESCUE_FORM);
   const [initialRescueForm, setInitialRescueForm] =
     useState<RescueFormValues>(EMPTY_RESCUE_FORM);
+  const [contacts, setContacts] = useState<EmergencyContactFormValues[]>([]);
+  const [initialContacts, setInitialContacts] = useState<EmergencyContactFormValues[]>([]);
   const [showReadyDialog, setShowReadyDialog] = useState(false);
 
   // sessionStorage never changes for the lifetime of this page, so there is
@@ -88,14 +91,13 @@ export default function EditPage() {
       setInitialCard(data as Card);
 
       if (data.profile_type === "rescue") {
-        const [{ data: rescueProfile }, { data: contact }] = await Promise.all([
+        const [{ data: rescueProfile }, { data: contactRows }] = await Promise.all([
           supabase.from("rescue_profiles").select("*").eq("card_id", id).maybeSingle(),
           supabase
             .from("emergency_contacts")
             .select("*")
             .eq("card_id", id)
-            .eq("is_primary", true)
-            .maybeSingle(),
+            .order("priority", { ascending: true }),
         ]);
 
         if (ignore) return;
@@ -105,13 +107,21 @@ export default function EditPage() {
           allergies: rescueProfile?.allergies ?? "",
           medicalConditions: rescueProfile?.medical_conditions ?? "",
           medications: rescueProfile?.medications ?? "",
-          contactFullName: contact?.full_name ?? "",
-          contactRelationship: contact?.relationship ?? "",
-          contactPhone: contact?.phone ?? "",
         };
+
+        const loadedContacts: EmergencyContactFormValues[] = (contactRows ?? []).map((row) => ({
+          id: row.id,
+          fullName: row.full_name ?? "",
+          relationship: row.relationship ?? "",
+          phone: row.phone ?? "",
+          priority: row.priority,
+          isPrimary: row.is_primary,
+        }));
 
         setRescueForm(loadedRescueForm);
         setInitialRescueForm(loadedRescueForm);
+        setContacts(loadedContacts);
+        setInitialContacts(loadedContacts);
       }
 
       setLoading(false);
@@ -151,17 +161,16 @@ export default function EditPage() {
         return;
       }
 
-      const contactResult = await upsertPrimaryEmergencyContact(id, {
-        fullName: rescueForm.contactFullName,
-        relationship: rescueForm.contactRelationship,
-        phone: rescueForm.contactPhone,
-      });
+      const contactsResult = await saveEmergencyContacts(id, contacts);
 
-      if (!contactResult.success) {
+      if (!contactsResult.success) {
         setSaving(false);
-        toast.error(contactResult.error);
+        toast.error(contactsResult.error);
         return;
       }
+
+      setContacts(contactsResult.contacts);
+      setInitialContacts(contactsResult.contacts);
     }
 
     setSaving(false);
@@ -180,14 +189,21 @@ export default function EditPage() {
     () => (card?.profile_type === "rescue" ? validateRescueForm(rescueForm) : {}),
     [card, rescueForm]
   );
+  const contactErrors = useMemo(
+    () => (card?.profile_type === "rescue" ? contacts.map(validateEmergencyContact) : []),
+    [card, contacts]
+  );
+  const hasContactErrors = contactErrors.some((e) => hasRescueErrors(e));
   const isDirty = useMemo(() => {
     const cardChanged = JSON.stringify(card) !== JSON.stringify(initialCard);
     const rescueChanged =
       card?.profile_type === "rescue" &&
-      JSON.stringify(rescueForm) !== JSON.stringify(initialRescueForm);
+      (JSON.stringify(rescueForm) !== JSON.stringify(initialRescueForm) ||
+        JSON.stringify(contacts) !== JSON.stringify(initialContacts));
     return cardChanged || rescueChanged;
-  }, [card, initialCard, rescueForm, initialRescueForm]);
-  const canSave = isDirty && !hasErrors(errors) && !hasRescueErrors(rescueErrors) && !saving;
+  }, [card, initialCard, rescueForm, initialRescueForm, contacts, initialContacts]);
+  const canSave =
+    isDirty && !hasErrors(errors) && !hasRescueErrors(rescueErrors) && !hasContactErrors && !saving;
 
   if (authLoading || loading || !card) {
     return <LoadingScreen />;
@@ -230,7 +246,9 @@ export default function EditPage() {
         errors={errors}
         rescueForm={rescueForm}
         setRescueForm={setRescueForm}
-        rescueErrors={rescueErrors}
+        contacts={contacts}
+        setContacts={setContacts}
+        contactErrors={contactErrors}
       />
 
       <Button

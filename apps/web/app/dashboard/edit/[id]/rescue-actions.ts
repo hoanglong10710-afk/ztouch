@@ -1,6 +1,8 @@
 "use server";
 
 import { createServerSupabase } from "@/lib/supabase/server";
+import { validateEmergencyContact, hasErrors } from "@/lib/validation/rescue";
+import type { EmergencyContactFormValues } from "@/lib/validation/rescue";
 
 export type SaveRescueDataResult = { success: true } | { success: false; error: string };
 
@@ -11,11 +13,9 @@ export type RescueProfileInput = {
   medications: string;
 };
 
-export type EmergencyContactInput = {
-  fullName: string;
-  relationship: string;
-  phone: string;
-};
+export type SaveEmergencyContactsResult =
+  | { success: true; contacts: EmergencyContactFormValues[] }
+  | { success: false; error: string };
 
 type ServerSupabase = Awaited<ReturnType<typeof createServerSupabase>>;
 
@@ -99,13 +99,16 @@ export async function upsertRescueProfile(
   return { success: true };
 }
 
-// Phase 10C-3 supports exactly one (the primary) emergency contact per card.
-// The database already allows many -- this action only ever reads/writes the
-// row with is_primary = true, matching the current UI's single-contact form.
-export async function upsertPrimaryEmergencyContact(
+// Phase 10C-5: full CRUD over a card's emergency contacts, saved as one unit
+// in the same flow as upsertRescueProfile. The caller sends the complete
+// desired list (existing contacts carry their `id`, new ones have `id:
+// null`); this action diffs it against what's in the database and applies
+// inserts/updates/deletes, then returns the saved list with server-assigned
+// ids so the caller's local state can stay in sync without a refetch.
+export async function saveEmergencyContacts(
   cardId: string,
-  input: EmergencyContactInput
-): Promise<SaveRescueDataResult> {
+  contacts: EmergencyContactFormValues[]
+): Promise<SaveEmergencyContactsResult> {
   const supabase = await createServerSupabase();
 
   const {
@@ -121,44 +124,81 @@ export async function upsertPrimaryEmergencyContact(
     return { success: false, error: ownershipError };
   }
 
-  if (!input.fullName.trim() || !input.phone.trim()) {
-    return { success: false, error: "Vui lòng nhập tên và số điện thoại liên hệ khẩn cấp" };
+  for (const contact of contacts) {
+    if (hasErrors(validateEmergencyContact(contact))) {
+      return {
+        success: false,
+        error: "Vui lòng nhập đầy đủ họ tên và số điện thoại cho mọi liên hệ khẩn cấp",
+      };
+    }
   }
 
-  const { data: existing, error: selectError } = await supabase
+  const { data: existingRows, error: selectError } = await supabase
     .from("emergency_contacts")
     .select("id")
-    .eq("card_id", cardId)
-    .eq("is_primary", true)
-    .maybeSingle();
+    .eq("card_id", cardId);
 
   if (selectError) {
     return { success: false, error: selectError.message };
   }
 
-  const fields = {
-    full_name: input.fullName.trim(),
-    relationship: nullIfEmpty(input.relationship),
-    phone: input.phone.trim(),
-  };
+  const keepIds = new Set(contacts.filter((c) => c.id).map((c) => c.id as string));
+  const idsToDelete = (existingRows ?? [])
+    .map((row) => row.id as string)
+    .filter((id) => !keepIds.has(id));
 
-  if (existing) {
-    const { error } = await supabase
-      .from("emergency_contacts")
-      .update(fields)
-      .eq("id", existing.id);
-
+  for (const id of idsToDelete) {
+    const { error } = await supabase.from("emergency_contacts").delete().eq("id", id);
     if (error) return { success: false, error: error.message };
-    return { success: true };
   }
 
-  const { error } = await supabase.from("emergency_contacts").insert({
-    card_id: cardId,
-    ...fields,
-    is_primary: true,
-    priority: 0,
-  });
+  // Two-phase write: first persist every contact with is_primary forced to
+  // false, then flip on the single chosen primary. This is what keeps the
+  // emergency_contacts_one_primary_per_card partial unique index from
+  // rejecting an intermediate state where the new and old primary would
+  // otherwise briefly both be true.
+  const saved: EmergencyContactFormValues[] = [];
 
-  if (error) return { success: false, error: error.message };
-  return { success: true };
+  for (const contact of contacts) {
+    const fields = {
+      full_name: contact.fullName.trim(),
+      relationship: nullIfEmpty(contact.relationship),
+      phone: contact.phone.trim(),
+      priority: contact.priority,
+      is_primary: false,
+    };
+
+    if (contact.id) {
+      const { error } = await supabase
+        .from("emergency_contacts")
+        .update(fields)
+        .eq("id", contact.id);
+
+      if (error) return { success: false, error: error.message };
+      saved.push({ ...contact, id: contact.id, isPrimary: false });
+    } else {
+      const { data, error } = await supabase
+        .from("emergency_contacts")
+        .insert({ card_id: cardId, ...fields })
+        .select("id")
+        .single();
+
+      if (error) return { success: false, error: error.message };
+      saved.push({ ...contact, id: data.id as string, isPrimary: false });
+    }
+  }
+
+  const primaryIndex = contacts.findIndex((c) => c.isPrimary);
+
+  if (primaryIndex !== -1 && saved[primaryIndex]) {
+    const { error } = await supabase
+      .from("emergency_contacts")
+      .update({ is_primary: true })
+      .eq("id", saved[primaryIndex].id as string);
+
+    if (error) return { success: false, error: error.message };
+    saved[primaryIndex] = { ...saved[primaryIndex], isPrimary: true };
+  }
+
+  return { success: true, contacts: saved };
 }

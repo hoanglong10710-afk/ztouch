@@ -7,9 +7,20 @@ import { Textarea } from "@/components/ui/textarea";
 import { Label } from "@/components/ui/label";
 import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
+import { Button } from "@/components/ui/button";
 import AvatarUploader from "@/components/dashboard/AvatarUploader";
 import { PROFILE_TYPE_LABELS } from "@/lib/profile-type";
-import type { RescueFormErrors, RescueFormValues } from "@/lib/validation/rescue";
+import type {
+  RescueFormValues,
+  EmergencyContactFormValues,
+  EmergencyContactFormErrors,
+} from "@/lib/validation/rescue";
+import {
+  addEmergencyContact,
+  deleteEmergencyContact,
+  moveEmergencyContact,
+  setPrimaryEmergencyContact,
+} from "@/lib/rescue/emergency-contacts";
 
 type Props = {
   card: Card;
@@ -17,7 +28,9 @@ type Props = {
   errors: CardFormErrors;
   rescueForm: RescueFormValues;
   setRescueForm: (values: RescueFormValues) => void;
-  rescueErrors: RescueFormErrors;
+  contacts: EmergencyContactFormValues[];
+  setContacts: (contacts: EmergencyContactFormValues[]) => void;
+  contactErrors: EmergencyContactFormErrors[];
 };
 
 type FieldDef = { name: CardStringField; label: string };
@@ -51,7 +64,9 @@ export default function EditForm({
   errors,
   rescueForm,
   setRescueForm,
-  rescueErrors,
+  contacts,
+  setContacts,
+  contactErrors,
 }: Props) {
   function updateField(name: CardStringField, value: string) {
     setCard({
@@ -65,6 +80,14 @@ export default function EditForm({
       ...rescueForm,
       [name]: value,
     });
+  }
+
+  function updateContactField(
+    index: number,
+    field: "fullName" | "relationship" | "phone",
+    value: string
+  ) {
+    setContacts(contacts.map((contact, i) => (i === index ? { ...contact, [field]: value } : contact)));
   }
 
   function renderField({ name, label }: FieldDef) {
@@ -204,41 +227,113 @@ export default function EditForm({
           <section className="space-y-6">
             <h2 className="text-lg font-semibold">Liên hệ khẩn cấp</h2>
 
-            <div className="space-y-6">
-              <div className="space-y-1.5">
-                <Label htmlFor="rescue_contact_full_name">Họ tên</Label>
-                <Input
-                  id="rescue_contact_full_name"
-                  value={rescueForm.contactFullName}
-                  aria-invalid={!!rescueErrors.contactFullName}
-                  onChange={(e) => updateRescueField("contactFullName", e.target.value)}
-                />
-                {rescueErrors.contactFullName && (
-                  <p className="text-sm text-destructive">{rescueErrors.contactFullName}</p>
-                )}
-              </div>
+            <div className="space-y-4">
+              {contacts.map((contact, index) => {
+                const fieldErrors = contactErrors[index] ?? {};
+                const key = contact.id ?? `new-${index}`;
 
-              <div className="space-y-1.5">
-                <Label htmlFor="rescue_contact_relationship">Mối quan hệ</Label>
-                <Input
-                  id="rescue_contact_relationship"
-                  value={rescueForm.contactRelationship}
-                  onChange={(e) => updateRescueField("contactRelationship", e.target.value)}
-                />
-              </div>
+                return (
+                  <div
+                    key={key}
+                    data-testid={`emergency-contact-${index}`}
+                    className="space-y-4 rounded-lg border border-border p-4"
+                  >
+                    <div className="flex items-center justify-between gap-2">
+                      <span className="text-sm font-medium text-foreground">
+                        Liên hệ {index + 1}
+                        {contact.isPrimary ? " · Liên hệ chính" : ""}
+                      </span>
 
-              <div className="space-y-1.5">
-                <Label htmlFor="rescue_contact_phone">Số điện thoại</Label>
-                <Input
-                  id="rescue_contact_phone"
-                  value={rescueForm.contactPhone}
-                  aria-invalid={!!rescueErrors.contactPhone}
-                  onChange={(e) => updateRescueField("contactPhone", e.target.value)}
-                />
-                {rescueErrors.contactPhone && (
-                  <p className="text-sm text-destructive">{rescueErrors.contactPhone}</p>
-                )}
-              </div>
+                      <div className="flex items-center gap-1">
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={index === 0}
+                          onClick={() => setContacts(moveEmergencyContact(contacts, index, -1))}
+                        >
+                          Lên
+                        </Button>
+                        <Button
+                          type="button"
+                          variant="ghost"
+                          size="sm"
+                          disabled={index === contacts.length - 1}
+                          onClick={() => setContacts(moveEmergencyContact(contacts, index, 1))}
+                        >
+                          Xuống
+                        </Button>
+                      </div>
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`contact_${key}_full_name`}>Họ tên</Label>
+                      <Input
+                        id={`contact_${key}_full_name`}
+                        value={contact.fullName}
+                        aria-invalid={!!fieldErrors.fullName}
+                        onChange={(e) => updateContactField(index, "fullName", e.target.value)}
+                      />
+                      {fieldErrors.fullName && (
+                        <p className="text-sm text-destructive">{fieldErrors.fullName}</p>
+                      )}
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`contact_${key}_relationship`}>Mối quan hệ</Label>
+                      <Input
+                        id={`contact_${key}_relationship`}
+                        value={contact.relationship}
+                        onChange={(e) =>
+                          updateContactField(index, "relationship", e.target.value)
+                        }
+                      />
+                    </div>
+
+                    <div className="space-y-1.5">
+                      <Label htmlFor={`contact_${key}_phone`}>Số điện thoại</Label>
+                      <Input
+                        id={`contact_${key}_phone`}
+                        value={contact.phone}
+                        aria-invalid={!!fieldErrors.phone}
+                        onChange={(e) => updateContactField(index, "phone", e.target.value)}
+                      />
+                      {fieldErrors.phone && (
+                        <p className="text-sm text-destructive">{fieldErrors.phone}</p>
+                      )}
+                    </div>
+
+                    <div className="flex items-center justify-between gap-2">
+                      <Button
+                        type="button"
+                        variant={contact.isPrimary ? "secondary" : "outline"}
+                        size="sm"
+                        disabled={contact.isPrimary}
+                        onClick={() => setContacts(setPrimaryEmergencyContact(contacts, index))}
+                      >
+                        {contact.isPrimary ? "Liên hệ chính" : "Đặt làm liên hệ chính"}
+                      </Button>
+
+                      <Button
+                        type="button"
+                        variant="destructive"
+                        size="sm"
+                        onClick={() => setContacts(deleteEmergencyContact(contacts, index))}
+                      >
+                        Xóa
+                      </Button>
+                    </div>
+                  </div>
+                );
+              })}
+
+              <Button
+                type="button"
+                variant="outline"
+                onClick={() => setContacts(addEmergencyContact(contacts))}
+              >
+                + Thêm liên hệ
+              </Button>
             </div>
           </section>
         </>
