@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { Phone, Mail, Globe, Siren } from "lucide-react";
+import { Phone, Mail, Globe, Siren, Download } from "lucide-react";
 import type { Metadata } from "next";
 import ProfileHeader from "@/components/public/ProfileHeader";
 import InfoButton from "@/components/public/InfoButton";
@@ -91,7 +91,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
       ? await getPrimaryEmergencyContact(publicId)
       : { contact: null };
 
-  const hasContactInfo = Boolean(card.phone || card.email || isSafeUrl(card.website));
+  const displayName = card.display_name || card.title || "";
   const socialLinks = SOCIAL_LINKS.filter(({ key }) => isSafeUrl(card[key]));
 
   // Request data must be read here, during render — after() cannot call
@@ -114,7 +114,7 @@ export default async function PublicPage({ params, searchParams }: Props) {
           className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8"
         >
           <ProfileHeader
-            name={card.display_name || card.title || ""}
+            name={displayName}
             jobTitle={card.job_title}
             bio={card.bio}
             avatarUrl={isSafeUrl(card.avatar_url) ? card.avatar_url : null}
@@ -150,35 +150,41 @@ export default async function PublicPage({ params, searchParams }: Props) {
             </section>
           )}
 
-          {hasContactInfo && (
-            <section aria-labelledby="contact-info-heading" className="mt-6 space-y-3 sm:mt-8">
-              <h2 id="contact-info-heading" className="sr-only">
-                Thông tin liên hệ
-              </h2>
+          <section aria-labelledby="contact-info-heading" className="mt-6 space-y-3 sm:mt-8">
+            <h2 id="contact-info-heading" className="sr-only">
+              Thông tin liên hệ
+            </h2>
 
-              {card.phone && (
-                <InfoButton
-                  href={`tel:${card.phone}`}
-                  icon={Phone}
-                  label={card.phone}
-                  ariaLabel={`Gọi điện thoại: ${card.phone}`}
-                />
-              )}
+            {card.phone && (
+              <InfoButton
+                href={`tel:${card.phone}`}
+                icon={Phone}
+                label={card.phone}
+                ariaLabel={`Gọi điện thoại: ${card.phone}`}
+              />
+            )}
 
-              {card.email && (
-                <InfoButton
-                  href={`mailto:${card.email}`}
-                  icon={Mail}
-                  label={card.email}
-                  ariaLabel={`Gửi email: ${card.email}`}
-                />
-              )}
+            {card.email && (
+              <InfoButton
+                href={`mailto:${card.email}`}
+                icon={Mail}
+                label={card.email}
+                ariaLabel={`Gửi email: ${card.email}`}
+              />
+            )}
 
-              {isSafeUrl(card.website) && (
-                <InfoButton href={card.website} icon={Globe} label="Website" external />
-              )}
-            </section>
-          )}
+            {isSafeUrl(card.website) && (
+              <InfoButton href={card.website} icon={Globe} label="Website" external />
+            )}
+
+            <InfoButton
+              href={`/p/${publicId}/vcard`}
+              icon={Download}
+              label="Lưu danh bạ"
+              ariaLabel={`Lưu danh bạ của ${displayName} về máy dưới dạng file .vcf`}
+              download
+            />
+          </section>
 
           {socialLinks.length > 0 && (
             <section aria-labelledby="social-links-heading" className="mt-6 sm:mt-8">

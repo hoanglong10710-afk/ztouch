@@ -8,6 +8,7 @@ type Props = {
   external?: boolean;
   variant?: "default" | "emergency";
   ariaLabel?: string;
+  download?: boolean;
 };
 
 // "emergency" is reserved for the one action on a rescue profile that should
@@ -25,12 +26,14 @@ export default function InfoButton({
   external,
   variant = "default",
   ariaLabel,
+  download,
 }: Props) {
   return (
     <a
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
+      download={download}
       aria-label={ariaLabel}
       className={cn(
         "flex items-center justify-center gap-2 rounded-xl p-4 text-center font-medium transition-colors",

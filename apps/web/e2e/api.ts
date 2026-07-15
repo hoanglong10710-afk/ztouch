@@ -11,6 +11,11 @@ type SeedCardInput = {
   display_name?: string | null;
   bio?: string | null;
   profile_type?: string;
+  job_title?: string | null;
+  company?: string | null;
+  phone?: string | null;
+  email?: string | null;
+  website?: string | null;
 };
 
 type SeedEmergencyContactInput = {
