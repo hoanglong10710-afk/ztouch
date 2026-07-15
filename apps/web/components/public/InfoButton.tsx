@@ -1,19 +1,41 @@
 import type { LucideIcon } from "lucide-react";
+import { cn } from "@/lib/utils";
 
 type Props = {
   href: string;
   icon: LucideIcon;
   label: string;
   external?: boolean;
+  variant?: "default" | "emergency";
+  ariaLabel?: string;
 };
 
-export default function InfoButton({ href, icon: Icon, label, external }: Props) {
+// "emergency" is reserved for the one action on a rescue profile that should
+// outrank every other InfoButton -- the primary emergency contact's call
+// button -- so it stays visually distinct from routine contact/social links.
+const VARIANT_CLASSES: Record<NonNullable<Props["variant"]>, string> = {
+  default: "bg-secondary text-secondary-foreground hover:bg-secondary/80",
+  emergency: "bg-destructive text-destructive-foreground shadow-sm hover:bg-destructive/90",
+};
+
+export default function InfoButton({
+  href,
+  icon: Icon,
+  label,
+  external,
+  variant = "default",
+  ariaLabel,
+}: Props) {
   return (
     <a
       href={href}
       target={external ? "_blank" : undefined}
       rel={external ? "noopener noreferrer" : undefined}
-      className="flex items-center justify-center gap-2 rounded-xl bg-secondary p-4 text-center font-medium text-secondary-foreground transition-colors hover:bg-secondary/80"
+      aria-label={ariaLabel}
+      className={cn(
+        "flex items-center justify-center gap-2 rounded-xl p-4 text-center font-medium transition-colors",
+        VARIANT_CLASSES[variant]
+      )}
     >
       <Icon className="size-5" aria-hidden="true" />
       <span>{label}</span>

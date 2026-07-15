@@ -1,7 +1,7 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { Phone, Mail, Globe } from "lucide-react";
+import { Phone, Mail, Globe, Siren } from "lucide-react";
 import type { Metadata } from "next";
 import ProfileHeader from "@/components/public/ProfileHeader";
 import InfoButton from "@/components/public/InfoButton";
@@ -106,7 +106,10 @@ export default async function PublicPage({ params, searchParams }: Props) {
   return (
     <main className="min-h-screen bg-muted">
       <div className="mx-auto max-w-xl p-4 sm:p-8">
-        <div className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8">
+        <article
+          aria-label="Hồ sơ công khai"
+          className="rounded-2xl border border-border bg-card p-6 shadow-lg sm:p-8"
+        >
           <ProfileHeader
             name={card.display_name || card.title || ""}
             jobTitle={card.job_title}
@@ -115,7 +118,18 @@ export default async function PublicPage({ params, searchParams }: Props) {
           />
 
           {card.profile_type === "rescue" && contact && (
-            <div className="mt-6 space-y-3 sm:mt-8">
+            <section
+              aria-labelledby="emergency-contact-heading"
+              className="mt-6 space-y-3 rounded-xl border border-destructive/30 bg-destructive/5 p-4 sm:mt-8 sm:p-5"
+            >
+              <h2
+                id="emergency-contact-heading"
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold tracking-wide text-destructive uppercase"
+              >
+                <Siren className="size-4" aria-hidden="true" />
+                Liên hệ khẩn cấp
+              </h2>
+
               <div className="text-center">
                 <p className="font-medium text-foreground">{contact.full_name}</p>
                 {contact.relationship && (
@@ -123,13 +137,28 @@ export default async function PublicPage({ params, searchParams }: Props) {
                 )}
               </div>
 
-              <InfoButton href={`tel:${contact.phone}`} icon={Phone} label="Gọi ngay" />
-            </div>
+              <InfoButton
+                href={`tel:${contact.phone}`}
+                icon={Phone}
+                label="Gọi ngay"
+                variant="emergency"
+                ariaLabel={`Gọi ngay cho ${contact.full_name}`}
+              />
+            </section>
           )}
 
-          <div className="mt-6 space-y-3 sm:mt-8">
+          <section aria-labelledby="contact-info-heading" className="mt-6 space-y-3 sm:mt-8">
+            <h2 id="contact-info-heading" className="sr-only">
+              Thông tin liên hệ
+            </h2>
+
             {card.phone && (
-              <InfoButton href={`tel:${card.phone}`} icon={Phone} label={card.phone} />
+              <InfoButton
+                href={`tel:${card.phone}`}
+                icon={Phone}
+                label={card.phone}
+                ariaLabel={`Gọi điện thoại: ${card.phone}`}
+              />
             )}
 
             {card.email && (
@@ -147,8 +176,8 @@ export default async function PublicPage({ params, searchParams }: Props) {
                 <SocialButton key={key} href={url} label={label} />
               ) : null;
             })}
-          </div>
-        </div>
+          </section>
+        </article>
       </div>
     </main>
   );

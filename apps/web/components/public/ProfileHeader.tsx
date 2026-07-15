@@ -16,7 +16,7 @@ export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props)
   const [imageFailed, setImageFailed] = useState(false);
 
   return (
-    <div className="flex flex-col items-center">
+    <header className="flex flex-col items-center">
       <Image
         src={!imageFailed && avatarUrl ? avatarUrl : FALLBACK_AVATAR}
         alt={name}
@@ -35,6 +35,6 @@ export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props)
           {bio}
         </p>
       )}
-    </div>
+    </header>
   );
 }
