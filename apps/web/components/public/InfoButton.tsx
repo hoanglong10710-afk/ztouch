@@ -1,5 +1,6 @@
 import type { LucideIcon } from "lucide-react";
 import { cn } from "@/lib/utils";
+import CopyButton from "@/components/CopyButton";
 
 type Props = {
   href: string;
@@ -9,6 +10,8 @@ type Props = {
   variant?: "default" | "emergency";
   ariaLabel?: string;
   download?: boolean;
+  copyValue?: string;
+  copyLabel?: string;
 };
 
 // "emergency" is reserved for the one action on a rescue profile that should
@@ -27,21 +30,36 @@ export default function InfoButton({
   variant = "default",
   ariaLabel,
   download,
+  copyValue,
+  copyLabel,
 }: Props) {
+  const hasCopy = Boolean(copyValue);
+
   return (
-    <a
-      href={href}
-      target={external ? "_blank" : undefined}
-      rel={external ? "noopener noreferrer" : undefined}
-      download={download}
-      aria-label={ariaLabel}
-      className={cn(
-        "flex items-center justify-center gap-2 rounded-xl p-4 text-center font-medium transition-colors",
-        VARIANT_CLASSES[variant]
+    <div className={cn("flex items-center rounded-xl transition-colors", VARIANT_CLASSES[variant])}>
+      <a
+        href={href}
+        target={external ? "_blank" : undefined}
+        rel={external ? "noopener noreferrer" : undefined}
+        download={download}
+        aria-label={ariaLabel}
+        className={cn(
+          "flex min-w-0 flex-1 items-center gap-2 p-4 font-medium",
+          hasCopy ? "justify-start text-left" : "justify-center text-center"
+        )}
+      >
+        <Icon className="size-5 shrink-0" aria-hidden="true" />
+        <span className="min-w-0 truncate">{label}</span>
+      </a>
+
+      {hasCopy && (
+        <CopyButton
+          value={copyValue!}
+          label={copyLabel ?? "Sao chép"}
+          iconOnly
+          className="mr-3 shrink-0 border-transparent bg-transparent hover:bg-background/60"
+        />
       )}
-    >
-      <Icon className="size-5 shrink-0" aria-hidden="true" />
-      <span className="min-w-0 truncate">{label}</span>
-    </a>
+    </div>
   );
 }

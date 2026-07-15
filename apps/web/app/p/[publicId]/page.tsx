@@ -161,6 +161,8 @@ export default async function PublicPage({ params, searchParams }: Props) {
                 icon={Phone}
                 label={card.phone}
                 ariaLabel={`Gọi điện thoại: ${card.phone}`}
+                copyValue={card.phone}
+                copyLabel="Sao chép số điện thoại"
               />
             )}
 
@@ -170,11 +172,21 @@ export default async function PublicPage({ params, searchParams }: Props) {
                 icon={Mail}
                 label={card.email}
                 ariaLabel={`Gửi email: ${card.email}`}
+                copyValue={card.email}
+                copyLabel="Sao chép email"
               />
             )}
 
             {isSafeUrl(card.website) && (
-              <InfoButton href={card.website} icon={Globe} label="Website" external />
+              <InfoButton
+                href={card.website}
+                icon={Globe}
+                label="Website"
+                external
+                ariaLabel={`Mở website: ${card.website}`}
+                copyValue={card.website}
+                copyLabel="Sao chép đường dẫn website"
+              />
             )}
 
             <InfoButton

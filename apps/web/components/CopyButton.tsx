@@ -3,13 +3,20 @@
 import { useState } from "react";
 import { Check, Copy } from "lucide-react";
 import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 
 type Props = {
   value: string;
   label?: string;
+  iconOnly?: boolean;
+  className?: string;
 };
 
-export default function CopyButton({ value, label = "Sao chép" }: Props) {
+// iconOnly renders a compact square button (icon, no text) for placement
+// inside tight rows like contact-action items -- the copy/state logic is
+// unchanged, only the rendering shrinks and the state moves from visible
+// text to aria-label so screen readers still get the "copied" announcement.
+export default function CopyButton({ value, label = "Sao chép", iconOnly = false, className }: Props) {
   const [copied, setCopied] = useState(false);
 
   async function handleCopy() {
@@ -22,10 +29,19 @@ export default function CopyButton({ value, label = "Sao chép" }: Props) {
     }
   }
 
+  const statusLabel = copied ? "Đã sao chép" : label;
+
   return (
-    <Button type="button" variant="outline" onClick={handleCopy}>
+    <Button
+      type="button"
+      variant="outline"
+      size={iconOnly ? "icon-lg" : "default"}
+      onClick={handleCopy}
+      aria-label={iconOnly ? statusLabel : undefined}
+      className={cn(className)}
+    >
       {copied ? <Check className="size-4" /> : <Copy className="size-4" />}
-      {copied ? "Đã sao chép" : label}
+      {!iconOnly && statusLabel}
     </Button>
   );
 }
