@@ -91,6 +91,9 @@ export default async function PublicPage({ params, searchParams }: Props) {
       ? await getPrimaryEmergencyContact(publicId)
       : { contact: null };
 
+  const hasContactInfo = Boolean(card.phone || card.email || isSafeUrl(card.website));
+  const socialLinks = SOCIAL_LINKS.filter(({ key }) => isSafeUrl(card[key]));
+
   // Request data must be read here, during render — after() cannot call
   // cookies()/headers() itself from inside a Server Component (see
   // lib/analytics/record-card-view.ts for why a client built from cookies()
@@ -147,36 +150,49 @@ export default async function PublicPage({ params, searchParams }: Props) {
             </section>
           )}
 
-          <section aria-labelledby="contact-info-heading" className="mt-6 space-y-3 sm:mt-8">
-            <h2 id="contact-info-heading" className="sr-only">
-              Thông tin liên hệ
-            </h2>
+          {hasContactInfo && (
+            <section aria-labelledby="contact-info-heading" className="mt-6 space-y-3 sm:mt-8">
+              <h2 id="contact-info-heading" className="sr-only">
+                Thông tin liên hệ
+              </h2>
 
-            {card.phone && (
-              <InfoButton
-                href={`tel:${card.phone}`}
-                icon={Phone}
-                label={card.phone}
-                ariaLabel={`Gọi điện thoại: ${card.phone}`}
-              />
-            )}
+              {card.phone && (
+                <InfoButton
+                  href={`tel:${card.phone}`}
+                  icon={Phone}
+                  label={card.phone}
+                  ariaLabel={`Gọi điện thoại: ${card.phone}`}
+                />
+              )}
 
-            {card.email && (
-              <InfoButton href={`mailto:${card.email}`} icon={Mail} label={card.email} />
-            )}
+              {card.email && (
+                <InfoButton
+                  href={`mailto:${card.email}`}
+                  icon={Mail}
+                  label={card.email}
+                  ariaLabel={`Gửi email: ${card.email}`}
+                />
+              )}
 
-            {isSafeUrl(card.website) && (
-              <InfoButton href={card.website} icon={Globe} label="Website" external />
-            )}
+              {isSafeUrl(card.website) && (
+                <InfoButton href={card.website} icon={Globe} label="Website" external />
+              )}
+            </section>
+          )}
 
-            {SOCIAL_LINKS.map(({ key, label }) => {
-              const url = card[key];
+          {socialLinks.length > 0 && (
+            <section aria-labelledby="social-links-heading" className="mt-6 sm:mt-8">
+              <h2 id="social-links-heading" className="sr-only">
+                Liên kết mạng xã hội
+              </h2>
 
-              return isSafeUrl(url) ? (
-                <SocialButton key={key} href={url} label={label} />
-              ) : null;
-            })}
-          </section>
+              <div className="grid grid-cols-2 gap-3">
+                {socialLinks.map(({ key, label }) => (
+                  <SocialButton key={key} href={card[key] as string} label={label} />
+                ))}
+              </div>
+            </section>
+          )}
         </article>
       </div>
     </main>

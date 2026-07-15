@@ -37,8 +37,8 @@ export default function InfoButton({
         VARIANT_CLASSES[variant]
       )}
     >
-      <Icon className="size-5" aria-hidden="true" />
-      <span>{label}</span>
+      <Icon className="size-5 shrink-0" aria-hidden="true" />
+      <span className="min-w-0 truncate">{label}</span>
     </a>
   );
 }
