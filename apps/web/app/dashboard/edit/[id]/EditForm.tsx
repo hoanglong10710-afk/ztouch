@@ -9,7 +9,8 @@ import { Separator } from "@/components/ui/separator";
 import { Switch } from "@/components/ui/switch";
 import { Button } from "@/components/ui/button";
 import AvatarUploader from "@/components/dashboard/AvatarUploader";
-import { PROFILE_TYPE_LABELS } from "@/lib/profile-type";
+import { PROFILE_TYPES, PROFILE_TYPE_LABELS } from "@/lib/profile-type";
+import { cn } from "@/lib/utils";
 import type {
   RescueFormValues,
   EmergencyContactFormValues,
@@ -116,8 +117,29 @@ export default function EditForm({
 
         <div className="space-y-6">
           <div className="space-y-1.5">
-            <Label>Loại hồ sơ</Label>
-            <p className="text-foreground">{PROFILE_TYPE_LABELS[card.profile_type]}</p>
+            <Label id="profile_type_label">Loại hồ sơ</Label>
+
+            <div
+              role="radiogroup"
+              aria-labelledby="profile_type_label"
+              className="grid grid-cols-2 gap-2"
+            >
+              {PROFILE_TYPES.map((type) => (
+                <button
+                  key={type}
+                  type="button"
+                  role="radio"
+                  aria-checked={card.profile_type === type}
+                  onClick={() => setCard({ ...card, profile_type: type })}
+                  className={cn(
+                    "rounded-lg border border-border p-3 text-left text-sm font-medium text-foreground transition-colors hover:bg-muted",
+                    card.profile_type === type && "border-primary ring-2 ring-primary"
+                  )}
+                >
+                  {PROFILE_TYPE_LABELS[type]}
+                </button>
+              ))}
+            </div>
           </div>
 
           <AvatarUploader

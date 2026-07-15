@@ -119,4 +119,42 @@ describe("updateCard", () => {
     expect(updatedFields.title).toBe("Cập nhật");
     expect(updatedFields.is_public).toBe(false);
   });
+
+  it("includes profile_type in the update payload", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    await updateCard("card-1", makeCard({ profile_type: "rescue" }));
+
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.profile_type).toBe("rescue");
+  });
+
+  it("persists switching from personal to rescue", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ profile_type: "personal" });
+    input.profile_type = "rescue";
+
+    const result = await updateCard("card-1", input);
+
+    expect(result).toEqual({ success: true });
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.profile_type).toBe("rescue");
+  });
+
+  it("persists switching from rescue back to personal", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ profile_type: "rescue" });
+    input.profile_type = "personal";
+
+    const result = await updateCard("card-1", input);
+
+    expect(result).toEqual({ success: true });
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.profile_type).toBe("personal");
+  });
 });

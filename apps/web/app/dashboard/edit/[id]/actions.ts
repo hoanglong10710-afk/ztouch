@@ -28,6 +28,7 @@ export async function updateCard(cardId: string, input: Card): Promise<UpdateCar
   const { error } = await supabase
     .from("cards")
     .update({
+      profile_type: input.profile_type,
       title: input.title,
       display_name: input.display_name,
       avatar_url: input.avatar_url,
