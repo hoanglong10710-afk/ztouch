@@ -23,6 +23,7 @@ import {
 } from "@/lib/onboarding/last-completed-profile";
 import DashboardHeader from "@/components/dashboard/DashboardHeader";
 import CardItem from "@/components/dashboard/CardItem";
+import CardListSkeleton from "@/components/dashboard/CardListSkeleton";
 import EmptyState from "@/components/dashboard/EmptyState";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import ProfileTypeSelector from "@/components/dashboard/ProfileTypeSelector";
@@ -36,10 +37,13 @@ export default function Dashboard() {
   const [cards, setCards] = useState<Card[]>([]);
   const [cardsLoading, setCardsLoading] = useState(true);
   const [viewStats, setViewStats] = useState<Record<string, CardViewStats>>({});
+  const [statsLoading, setStatsLoading] = useState(true);
   const [deleteTargetId, setDeleteTargetId] = useState<string | null>(null);
   const [deleting, setDeleting] = useState(false);
   const [highlightedCardId, setHighlightedCardId] = useState<string | null>(null);
   const [showTypeDialog, setShowTypeDialog] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
 
   useEffect(() => {
     if (authLoading) return;
@@ -49,9 +53,12 @@ export default function Dashboard() {
       return;
     }
 
-    loadCards(user.id).then(() => setCardsLoading(false));
+    loadCards(user.id);
   }, [authLoading, user]);
 
+  // Cards render as soon as they arrive; view stats are fetched separately
+  // and don't block the list from appearing, so CardItem shows a skeleton
+  // in the stats slot instead of the whole card waiting on both requests.
   async function loadCards(userId: string) {
     const { data, error } = await supabase
       .from("cards")
@@ -61,13 +68,24 @@ export default function Dashboard() {
 
     if (!error && data) {
       setCards(data as Card[]);
-      setViewStats(await getCardViewStats(supabase, data.map((card) => card.id)));
+      setCardsLoading(false);
 
       const lastCompleted = readLastCompletedProfile();
       if (lastCompleted && data.some((card) => card.id === lastCompleted.cardId)) {
         setHighlightedCardId(lastCompleted.cardId);
         clearLastCompletedProfile();
       }
+
+      setStatsLoading(true);
+      const stats = await getCardViewStats(
+        supabase,
+        data.map((card) => card.id)
+      );
+      setViewStats(stats);
+      setStatsLoading(false);
+    } else {
+      setCardsLoading(false);
+      setStatsLoading(false);
     }
   }
 
@@ -76,11 +94,13 @@ export default function Dashboard() {
   }
 
   async function createCard(profileType: ProfileType) {
-    if (!user) return;
+    if (!user || creating) return;
 
+    setCreating(true);
     const result = await createCardAction(profileType);
 
     if (!result.success) {
+      setCreating(false);
       toast.error(result.error);
       return;
     }
@@ -95,7 +115,7 @@ export default function Dashboard() {
   }
 
   async function confirmDeleteCard() {
-    if (!user || !deleteTargetId) return;
+    if (!user || !deleteTargetId || deleting) return;
 
     setDeleting(true);
 
@@ -113,15 +133,21 @@ export default function Dashboard() {
       return;
     }
 
+    // Deliberately not toggling cardsLoading here -- the remaining cards
+    // stay on screen while this reload runs, so the list doesn't flash back
+    // to the skeleton and jump every time a card is deleted.
     await loadCards(user.id);
   }
 
   async function logout() {
+    if (loggingOut) return;
+
+    setLoggingOut(true);
     await supabase.auth.signOut();
     router.push("/login");
   }
 
-  if (authLoading || !user || cardsLoading) {
+  if (authLoading || !user) {
     return <LoadingScreen />;
   }
 
@@ -132,7 +158,9 @@ export default function Dashboard() {
 
       <div className="mt-6 space-y-4 sm:mt-10 sm:space-y-6">
 
-        {cards.length === 0 ? (
+        {cardsLoading ? (
+          <CardListSkeleton />
+        ) : cards.length === 0 ? (
           <EmptyState onCreateCard={openCreateDialog} />
         ) : (
           cards.map((card) => (
@@ -140,6 +168,7 @@ export default function Dashboard() {
               key={card.id}
               card={card}
               stats={viewStats[card.id]}
+              statsLoading={statsLoading}
               highlighted={card.id === highlightedCardId}
               onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
               onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
@@ -156,9 +185,11 @@ export default function Dashboard() {
         size="lg"
         className="mt-8 sm:mt-12"
         onClick={logout}
+        disabled={loggingOut}
+        aria-busy={loggingOut}
       >
         <LogOut className="size-4" />
-        Đăng xuất
+        {loggingOut ? "Đang đăng xuất..." : "Đăng xuất"}
       </Button>
 
       <Dialog
@@ -188,6 +219,7 @@ export default function Dashboard() {
               variant="destructive"
               onClick={confirmDeleteCard}
               disabled={deleting}
+              aria-busy={deleting}
             >
               {deleting ? "Đang xóa..." : "Xóa"}
             </Button>
@@ -199,6 +231,7 @@ export default function Dashboard() {
         <ProfileTypeSelector
           onCancel={() => setShowTypeDialog(false)}
           onContinue={createCard}
+          creating={creating}
         />
       </Dialog>
 

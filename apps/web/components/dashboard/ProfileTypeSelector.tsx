@@ -36,9 +36,10 @@ const OPTIONS: Option[] = [
 type Props = {
   onCancel: () => void;
   onContinue: (profileType: ProfileType) => void;
+  creating?: boolean;
 };
 
-export default function ProfileTypeSelector({ onCancel, onContinue }: Props) {
+export default function ProfileTypeSelector({ onCancel, onContinue, creating }: Props) {
   const [selected, setSelected] = useState<ProfileType>("personal");
 
   return (
@@ -53,9 +54,10 @@ export default function ProfileTypeSelector({ onCancel, onContinue }: Props) {
             key={option.value}
             type="button"
             aria-pressed={selected === option.value}
+            disabled={creating}
             onClick={() => setSelected(option.value)}
             className={cn(
-              "flex w-full items-start gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted",
+              "flex w-full items-start gap-3 rounded-lg border border-border p-4 text-left transition-colors hover:bg-muted disabled:pointer-events-none disabled:opacity-50",
               selected === option.value && "border-primary ring-2 ring-primary"
             )}
           >
@@ -72,12 +74,17 @@ export default function ProfileTypeSelector({ onCancel, onContinue }: Props) {
       </div>
 
       <DialogFooter>
-        <Button type="button" variant="outline" onClick={onCancel}>
+        <Button type="button" variant="outline" onClick={onCancel} disabled={creating}>
           Hủy
         </Button>
 
-        <Button type="button" onClick={() => onContinue(selected)}>
-          Tiếp tục
+        <Button
+          type="button"
+          onClick={() => onContinue(selected)}
+          disabled={creating}
+          aria-busy={creating}
+        >
+          {creating ? "Đang tạo..." : "Tiếp tục"}
         </Button>
       </DialogFooter>
     </DialogContent>

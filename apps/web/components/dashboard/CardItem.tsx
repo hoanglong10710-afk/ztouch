@@ -11,6 +11,7 @@ import { PROFILE_TYPE_LABELS } from "@/lib/profile-type";
 type Props = {
   card: Card;
   stats?: CardViewStats;
+  statsLoading?: boolean;
   highlighted?: boolean;
   onEdit: (id: string) => void;
   onView: (publicId: string) => void;
@@ -24,7 +25,15 @@ const STAT_ITEMS: { key: keyof CardViewStats; label: string }[] = [
   { key: "last30Days", label: "30 ngày" },
 ];
 
-export default function CardItem({ card, stats, highlighted, onEdit, onView, onDelete }: Props) {
+export default function CardItem({
+  card,
+  stats,
+  statsLoading,
+  highlighted,
+  onEdit,
+  onView,
+  onDelete,
+}: Props) {
   const publicUrl =
     typeof window !== "undefined"
       ? `${window.location.origin}/p/${card.public_id}`
@@ -68,12 +77,24 @@ export default function CardItem({ card, stats, highlighted, onEdit, onView, onD
         <span>{PROFILE_TYPE_LABELS[card.profile_type]}</span>
       </div>
 
-      {stats && (
-        <dl className="mt-4 grid grid-cols-4 gap-2 rounded-lg bg-muted/50 p-3 text-center sm:gap-3">
+      {(statsLoading || stats) && (
+        <dl
+          aria-busy={statsLoading}
+          className="mt-4 grid grid-cols-4 gap-2 rounded-lg bg-muted/50 p-3 text-center sm:gap-3"
+        >
+          {statsLoading && <span className="sr-only">Đang tải số liệu thống kê...</span>}
+
           {STAT_ITEMS.map(({ key, label }) => (
             <div key={key} className="flex flex-col items-center">
               <dd className="order-1 text-base font-semibold text-foreground sm:text-lg">
-                {stats[key]}
+                {statsLoading || !stats ? (
+                  <span
+                    aria-hidden="true"
+                    className="inline-block h-5 w-8 animate-pulse rounded bg-muted-foreground/20 sm:h-6"
+                  />
+                ) : (
+                  stats[key]
+                )}
               </dd>
               <dt className="order-2 mt-0.5 text-[0.65rem] text-muted-foreground sm:text-xs">
                 {label}
