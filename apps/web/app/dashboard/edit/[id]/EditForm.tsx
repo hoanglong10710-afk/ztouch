@@ -266,6 +266,42 @@ export default function EditForm({
       <Separator />
 
       <section className="space-y-6">
+        <h2 className="text-lg font-semibold">Liên kết công khai</h2>
+
+        <div className="space-y-1.5">
+          <Label htmlFor="public_id">Đường dẫn công khai</Label>
+
+          <div className="flex items-center rounded-md border border-input focus-within:ring-1 focus-within:ring-ring">
+            <span className="whitespace-nowrap pl-3 text-sm text-muted-foreground">
+              ztouch.vn/p/
+            </span>
+
+            <Input
+              id="public_id"
+              value={card.public_id}
+              aria-invalid={!!errors.public_id}
+              className="border-0 pl-1 shadow-none focus-visible:ring-0"
+              onChange={(e) => updateField("public_id", e.target.value.toLowerCase())}
+            />
+          </div>
+
+          {errors.public_id ? (
+            <p className="text-sm text-destructive">{errors.public_id}</p>
+          ) : (
+            <p className="text-sm text-muted-foreground">
+              Chỉ dùng chữ thường, số và dấu gạch ngang. Độ dài 3–30 ký tự.
+            </p>
+          )}
+
+          <p className="break-all text-sm text-muted-foreground">
+            Xem trước: https://ztouch.vn/p/{card.public_id || "…"}
+          </p>
+        </div>
+      </section>
+
+      <Separator />
+
+      <section className="space-y-6">
         <h2 className="text-lg font-semibold">Liên hệ</h2>
 
         <div className="space-y-6">{CONTACT_FIELDS.map(renderField)}</div>

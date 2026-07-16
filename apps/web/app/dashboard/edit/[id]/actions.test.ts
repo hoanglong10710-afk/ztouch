@@ -68,7 +68,7 @@ describe("updateCard", () => {
     const supabaseMock = makeSupabaseMock({ user: null });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await updateCard("card-1", makeCard());
+    const result = await updateCard("card-1", makeCard(), "ABC123");
 
     expect(result).toEqual({
       success: false,
@@ -81,7 +81,7 @@ describe("updateCard", () => {
     const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await updateCard("card-1", makeCard({ title: "" }));
+    const result = await updateCard("card-1", makeCard({ title: "" }), "ABC123");
 
     expect(result.success).toBe(false);
     if (!result.success) {
@@ -98,7 +98,7 @@ describe("updateCard", () => {
     });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    const result = await updateCard("card-1", makeCard());
+    const result = await updateCard("card-1", makeCard(), "ABC123");
 
     expect(result).toEqual({ success: false, error: "boom" });
   });
@@ -108,7 +108,7 @@ describe("updateCard", () => {
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
     const input = makeCard({ title: "Cập nhật", is_public: false });
-    const result = await updateCard("card-1", input);
+    const result = await updateCard("card-1", input, "ABC123");
 
     expect(result).toEqual({ success: true });
     expect(supabaseMock.from).toHaveBeenCalledWith("cards");
@@ -120,11 +120,63 @@ describe("updateCard", () => {
     expect(updatedFields.is_public).toBe(false);
   });
 
+  it("allows an unchanged legacy public_id that would fail the new slug rules", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "ABC123" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result).toEqual({ success: true });
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.public_id).toBe("ABC123");
+  });
+
+  it("accepts a new public_id that matches the slug rules", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "long" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result).toEqual({ success: true });
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.public_id).toBe("long");
+  });
+
+  it("rejects a changed public_id that fails the slug rules", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "Not Valid" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.fieldErrors?.public_id).toBeDefined();
+    }
+    expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
+  it("rejects a changed public_id that is a reserved word", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "admin" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.fieldErrors?.public_id).toBeDefined();
+    }
+    expect(supabaseMock.from).not.toHaveBeenCalled();
+  });
+
   it("includes profile_type in the update payload", async () => {
     const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
-    await updateCard("card-1", makeCard({ profile_type: "rescue" }));
+    await updateCard("card-1", makeCard({ profile_type: "rescue" }), "ABC123");
 
     const updatedFields = supabaseMock.__update.mock.calls[0][0];
     expect(updatedFields.profile_type).toBe("rescue");
@@ -137,7 +189,7 @@ describe("updateCard", () => {
     const input = makeCard({ profile_type: "personal" });
     input.profile_type = "rescue";
 
-    const result = await updateCard("card-1", input);
+    const result = await updateCard("card-1", input, "ABC123");
 
     expect(result).toEqual({ success: true });
     const updatedFields = supabaseMock.__update.mock.calls[0][0];
@@ -151,7 +203,7 @@ describe("updateCard", () => {
     const input = makeCard({ profile_type: "rescue" });
     input.profile_type = "personal";
 
-    const result = await updateCard("card-1", input);
+    const result = await updateCard("card-1", input, "ABC123");
 
     expect(result).toEqual({ success: true });
     const updatedFields = supabaseMock.__update.mock.calls[0][0];

@@ -19,6 +19,7 @@ import ShareButton from "@/components/ShareButton";
 import EditForm from "./EditForm";
 import LoadingScreen from "@/components/dashboard/LoadingScreen";
 import { validateCard, hasErrors } from "@/lib/validation/card";
+import { validatePublicId } from "@/lib/validation/public-id";
 import {
   validateRescueForm,
   validateEmergencyContact,
@@ -139,7 +140,7 @@ export default function EditPage() {
 
     setSaving(true);
 
-    const result = await updateCardAction(id, card);
+    const result = await updateCardAction(id, card, initialCard?.public_id ?? card.public_id);
 
     if (!result.success) {
       setSaving(false);
@@ -184,7 +185,23 @@ export default function EditPage() {
     }
   }
 
-  const errors = useMemo(() => (card ? validateCard(card) : {}), [card]);
+  const errors = useMemo(() => {
+    if (!card) return {};
+
+    const baseErrors = validateCard(card);
+
+    // Legacy public_ids predate the vanity-slug rules and must keep
+    // working untouched -- only enforce the slug format once the owner
+    // actually edits it.
+    if (card.public_id !== initialCard?.public_id) {
+      const publicIdError = validatePublicId(card.public_id);
+      if (publicIdError) {
+        return { ...baseErrors, public_id: publicIdError };
+      }
+    }
+
+    return baseErrors;
+  }, [card, initialCard]);
   const rescueErrors = useMemo(
     () => (card?.profile_type === "rescue" ? validateRescueForm(rescueForm) : {}),
     [card, rescueForm]

@@ -2,13 +2,23 @@
 
 import { createServerSupabase } from "@/lib/supabase/server";
 import { validateCard, hasErrors, type CardFormErrors } from "@/lib/validation/card";
+import { validatePublicId } from "@/lib/validation/public-id";
 import type { Card } from "@/types/card";
 
 export type UpdateCardResult =
   | { success: true }
   | { success: false; error: string; fieldErrors?: CardFormErrors };
 
-export async function updateCard(cardId: string, input: Card): Promise<UpdateCardResult> {
+// `previousPublicId` is the value loaded from the DB before editing. Legacy
+// cards carry randomly-generated public_ids (e.g. "A1B2C3") that predate the
+// vanity-slug rules and must keep working without forcing the owner to pick
+// a new slug -- so the slug format is only enforced when the id actually
+// changes in this edit.
+export async function updateCard(
+  cardId: string,
+  input: Card,
+  previousPublicId: string
+): Promise<UpdateCardResult> {
   const supabase = await createServerSupabase();
 
   const {
@@ -20,6 +30,13 @@ export async function updateCard(cardId: string, input: Card): Promise<UpdateCar
   }
 
   const fieldErrors = validateCard(input);
+
+  if (input.public_id !== previousPublicId) {
+    const publicIdError = validatePublicId(input.public_id);
+    if (publicIdError) {
+      fieldErrors.public_id = publicIdError;
+    }
+  }
 
   if (hasErrors(fieldErrors)) {
     return { success: false, error: "Vui lòng kiểm tra lại thông tin", fieldErrors };
@@ -46,6 +63,7 @@ export async function updateCard(cardId: string, input: Card): Promise<UpdateCar
       linkedin: input.linkedin,
       github: input.github,
       address: input.address,
+      public_id: input.public_id.trim(),
     })
     .eq("id", cardId)
     .eq("owner_id", user.id);
