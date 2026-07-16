@@ -8,7 +8,5 @@ type Props = {
 };
 
 export default function Error({ error, reset }: Props) {
-  return (
-    <ErrorState error={error} reset={reset} message="Không thể tải hồ sơ này. Vui lòng thử lại." />
-  );
+  return <ErrorState error={error} reset={reset} />;
 }

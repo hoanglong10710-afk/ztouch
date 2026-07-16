@@ -2,7 +2,7 @@
 
 import { useEffect, useMemo, useState, useSyncExternalStore } from "react";
 import { useParams, useRouter } from "next/navigation";
-import { PartyPopper } from "lucide-react";
+import { ArrowLeft, PartyPopper } from "lucide-react";
 import { supabase } from "@/lib/supabase/client";
 import { useAuth } from "@/components/auth/AuthProvider";
 import { Button } from "@/components/ui/button";
@@ -241,12 +241,15 @@ export default function EditPage() {
 
   return (
     <main className="mx-auto max-w-3xl p-4 sm:p-10" data-first-profile={isFirstProfile}>
-      <button
+      <Button
+        type="button"
+        variant="outline"
         onClick={() => router.back()}
-        className="mb-4 rounded-lg bg-gray-200 px-4 py-2 sm:mb-6"
+        className="mb-4 sm:mb-6"
       >
-        ← Quay lại
-      </button>
+        <ArrowLeft className="size-4" />
+        Quay lại
+      </Button>
 
       <h1 className="mb-6 text-2xl font-bold sm:mb-8 sm:text-4xl">✏️ Chỉnh sửa hồ sơ</h1>
 
