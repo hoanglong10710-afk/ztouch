@@ -20,6 +20,34 @@ test("a public, active card renders on its public profile page", async ({ page }
   await expect(page.getByText("Xin chào, đây là hồ sơ công khai của tôi.")).toBeVisible();
 });
 
+test("a legacy random public_id resolves to its public profile", async ({ page }) => {
+  const card = await seedCard({
+    title: "Hồ sơ cũ",
+    public_id: "A1B2C3",
+    is_public: true,
+    status: "active",
+  });
+
+  await page.goto(`/p/${card.public_id}`);
+
+  await expect(page.getByRole("article", { name: "Hồ sơ công khai" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Không tìm thấy hồ sơ" })).not.toBeVisible();
+});
+
+test("a vanity slug public_id resolves to its public profile", async ({ page }) => {
+  const card = await seedCard({
+    title: "Hồ sơ vanity",
+    public_id: "sunpeo",
+    is_public: true,
+    status: "active",
+  });
+
+  await page.goto(`/p/${card.public_id}`);
+
+  await expect(page.getByRole("article", { name: "Hồ sơ công khai" })).toBeVisible();
+  await expect(page.getByRole("heading", { name: "Không tìm thấy hồ sơ" })).not.toBeVisible();
+});
+
 test("a private card returns not-found on its public profile page", async ({ page }) => {
   const card = await seedCard({ title: "Hồ sơ riêng tư", is_public: false });
 

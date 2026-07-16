@@ -12,7 +12,8 @@ export const getCardByPublicId = cache(async (publicId: string) => {
     .select("*")
     .eq("public_id", publicId)
     .eq("is_public", true)
-    .eq("status", "active");
+    .eq("status", "active")
+    .limit(1);
 
   return { card: data?.[0] as Card | undefined, error };
 });
