@@ -10,6 +10,7 @@ type SeedCardInput = {
   is_public?: boolean;
   display_name?: string | null;
   bio?: string | null;
+  avatar_url?: string | null;
   profile_type?: string;
   job_title?: string | null;
   company?: string | null;

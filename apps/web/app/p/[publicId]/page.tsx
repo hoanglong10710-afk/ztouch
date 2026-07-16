@@ -9,6 +9,7 @@ import SocialButton from "@/components/public/SocialButton";
 import { getCardByPublicId, getPrimaryEmergencyContact } from "./data";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { recordCardView } from "@/lib/analytics/record-card-view";
+import { buildPublicProfileMetadata, notFoundProfileMetadata } from "@/lib/public-profile-metadata";
 import type { CardStringField } from "@/types/card";
 
 // Without this, Next.js's fetch cache can serve a stale card (e.g. after an
@@ -50,28 +51,10 @@ export async function generateMetadata({ params }: Props): Promise<Metadata> {
   const { card, error } = await getCardByPublicId(publicId);
 
   if (error || !card) {
-    return { title: "Không tìm thấy hồ sơ" };
+    return notFoundProfileMetadata();
   }
 
-  const name = card.display_name || card.title || "Hồ sơ Z-TOUCH";
-  const description = card.bio || card.job_title || "Hồ sơ số Z-TOUCH";
-
-  return {
-    title: name,
-    description,
-    openGraph: {
-      title: name,
-      description,
-      type: "profile",
-      images: isSafeUrl(card.avatar_url) ? [card.avatar_url] : undefined,
-    },
-    twitter: {
-      card: "summary",
-      title: name,
-      description,
-      images: isSafeUrl(card.avatar_url) ? [card.avatar_url] : undefined,
-    },
-  };
+  return buildPublicProfileMetadata(card, publicId);
 }
 
 export default async function PublicPage({ params, searchParams }: Props) {
