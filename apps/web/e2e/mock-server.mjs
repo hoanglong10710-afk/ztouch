@@ -17,7 +17,7 @@ const FAKE_USER = {
   phone: "",
   app_metadata: { provider: "google", providers: ["google"] },
   user_metadata: {
-    avatar_url: "https://placehold.co/200x200",
+    avatar_url: "https://placehold.co/200x200.png",
     full_name: "E2E Test User",
     email: "e2e@example.com",
     email_verified: true,

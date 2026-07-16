@@ -16,7 +16,9 @@ type Props = {
   onUploaded: (url: string) => void;
 };
 
-const FALLBACK_AVATAR = "https://placehold.co/200x200";
+// .png suffix matters: without it placehold.co serves image/svg+xml, which
+// next/image refuses to optimize unless images.dangerouslyAllowSVG is set.
+const FALLBACK_AVATAR = "https://placehold.co/200x200.png";
 
 export default function AvatarUploader({ cardId, avatarUrl, onUploaded }: Props) {
   const inputRef = useRef<HTMLInputElement>(null);

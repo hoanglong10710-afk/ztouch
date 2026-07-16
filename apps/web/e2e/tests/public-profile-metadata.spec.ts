@@ -10,7 +10,7 @@ test("a public, active card exposes rich, indexable Open Graph metadata", async 
     title: "Hồ sơ cũ",
     display_name: "Nguyễn Văn A",
     bio: "Xin chào, đây là hồ sơ công khai của tôi.",
-    avatar_url: "https://placehold.co/200x200",
+    avatar_url: "https://placehold.co/200x200.png",
     is_public: true,
     status: "active",
   });

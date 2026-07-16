@@ -142,6 +142,18 @@ export async function saveEmergencyContacts(
     return { success: false, error: selectError.message };
   }
 
+  const existingIds = new Set((existingRows ?? []).map((row) => row.id as string));
+
+  // A contact.id that isn't among this card's own rows would otherwise let a
+  // caller update or re-primary another card's emergency contact by id --
+  // reject the whole save up front rather than silently no-op an update
+  // scoped to a card_id it doesn't match.
+  for (const contact of contacts) {
+    if (contact.id && !existingIds.has(contact.id)) {
+      return { success: false, error: "Không tìm thấy liên hệ khẩn cấp" };
+    }
+  }
+
   const keepIds = new Set(contacts.filter((c) => c.id).map((c) => c.id as string));
   const idsToDelete = (existingRows ?? [])
     .map((row) => row.id as string)
@@ -172,7 +184,8 @@ export async function saveEmergencyContacts(
       const { error } = await supabase
         .from("emergency_contacts")
         .update(fields)
-        .eq("id", contact.id);
+        .eq("id", contact.id)
+        .eq("card_id", cardId);
 
       if (error) return { success: false, error: error.message };
       saved.push({ ...contact, id: contact.id, isPrimary: false });
@@ -194,7 +207,8 @@ export async function saveEmergencyContacts(
     const { error } = await supabase
       .from("emergency_contacts")
       .update({ is_primary: true })
-      .eq("id", saved[primaryIndex].id as string);
+      .eq("id", saved[primaryIndex].id as string)
+      .eq("card_id", cardId);
 
     if (error) return { success: false, error: error.message };
     saved[primaryIndex] = { ...saved[primaryIndex], isPrimary: true };

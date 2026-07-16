@@ -10,7 +10,9 @@ type Props = {
   avatarUrl: string | null;
 };
 
-const FALLBACK_AVATAR = "https://placehold.co/200x200";
+// .png suffix matters: without it placehold.co serves image/svg+xml, which
+// next/image refuses to optimize unless images.dangerouslyAllowSVG is set.
+const FALLBACK_AVATAR = "https://placehold.co/200x200.png";
 
 export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props) {
   const [imageFailed, setImageFailed] = useState(false);

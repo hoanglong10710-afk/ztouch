@@ -171,7 +171,9 @@ export default function Dashboard() {
               statsLoading={statsLoading}
               highlighted={card.id === highlightedCardId}
               onEdit={(id) => router.push(`/dashboard/edit/${id}`)}
-              onView={(publicId) => window.open(`/p/${publicId}`, "_blank")}
+              onView={(publicId) =>
+                window.open(`/p/${publicId}`, "_blank", "noopener,noreferrer")
+              }
               onDelete={deleteCard}
             />
           ))

@@ -42,11 +42,11 @@ for (const width of WIDTHS) {
     page,
     context,
   }) => {
-    const card = await seedCard({ title: "Hồ sơ test", profile_type: "rescue" });
+    await seedCard({ title: "Hồ sơ test", profile_type: "rescue" });
     await page.setViewportSize({ width, height: 800 });
     await signIn(context, APP_URL);
     await page.goto("/dashboard");
-    await page.getByRole("article", { name: card.title ?? "Hồ sơ test" }).waitFor();
+    await page.getByRole("article", { name: "Hồ sơ test" }).waitFor();
     await expectNoHorizontalOverflow(page, width);
   });
 
@@ -86,7 +86,10 @@ for (const width of WIDTHS) {
     await page.setViewportSize({ width, height: 800 });
     await signIn(context, APP_URL);
     await page.goto("/dashboard");
-    await page.getByRole("button", { name: "Tạo hồ sơ mới" }).click();
+    // The empty-state view renders its own "Tạo hồ sơ mới" CTA alongside the
+    // header's, so this locator is ambiguous here -- .first() is the header's
+    // button, which exists regardless of whether the dashboard has cards.
+    await page.getByRole("button", { name: "Tạo hồ sơ mới" }).first().click();
     await page.getByRole("heading", { name: "Chọn loại hồ sơ" }).waitFor();
     await expectNoHorizontalOverflow(page, width);
   });
