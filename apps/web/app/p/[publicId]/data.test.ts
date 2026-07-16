@@ -5,7 +5,7 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getCardByPublicId, getPrimaryEmergencyContact } from "./data";
+import { getCardByPublicId, getPrimaryEmergencyContact, listPublicCardIds } from "./data";
 import type { Card } from "@/types/card";
 
 const mockedCreateServerSupabase = vi.mocked(createServerSupabase);
@@ -118,6 +118,61 @@ describe("getCardByPublicId", () => {
 
     expect(result.card).toBeUndefined();
     expect(result.error).toEqual({ message: "boom" });
+  });
+});
+
+describe("listPublicCardIds", () => {
+  beforeEach(() => {
+    mockedCreateServerSupabase.mockReset();
+  });
+
+  function makeListMock({
+    rows = [] as { public_id: string; created_at: string }[],
+    error = null as { message: string } | null,
+  } = {}) {
+    const eqStatus = vi.fn().mockResolvedValue({ data: rows, error });
+    const eqIsPublic = vi.fn().mockReturnValue({ eq: eqStatus });
+    const select = vi.fn().mockReturnValue({ eq: eqIsPublic });
+    const from = vi.fn().mockReturnValue({ select });
+
+    return { from, __select: select, __eqIsPublic: eqIsPublic, __eqStatus: eqStatus };
+  }
+
+  it("only selects public, active cards", async () => {
+    const supabaseMock = makeListMock({ rows: [] });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    await listPublicCardIds();
+
+    expect(supabaseMock.__select).toHaveBeenCalledWith("public_id, created_at");
+    expect(supabaseMock.__eqIsPublic).toHaveBeenCalledWith("is_public", true);
+    expect(supabaseMock.__eqStatus).toHaveBeenCalledWith("status", "active");
+  });
+
+  it("maps rows to camelCase public_id/created_at pairs", async () => {
+    const supabaseMock = makeListMock({
+      rows: [
+        { public_id: "sunpeo", created_at: "2026-01-01T00:00:00.000Z" },
+        { public_id: "A1B2C3", created_at: "2026-02-01T00:00:00.000Z" },
+      ],
+    });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const result = await listPublicCardIds();
+
+    expect(result).toEqual([
+      { publicId: "sunpeo", createdAt: "2026-01-01T00:00:00.000Z" },
+      { publicId: "A1B2C3", createdAt: "2026-02-01T00:00:00.000Z" },
+    ]);
+  });
+
+  it("returns an empty array (never throws) when the query errors", async () => {
+    const supabaseMock = makeListMock({ rows: [], error: { message: "boom" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const result = await listPublicCardIds();
+
+    expect(result).toEqual([]);
   });
 });
 

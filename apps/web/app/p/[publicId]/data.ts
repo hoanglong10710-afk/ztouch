@@ -38,3 +38,28 @@ export async function getPrimaryEmergencyContact(publicId: string) {
 
   return { contact: data as PrimaryEmergencyContact | null, error };
 }
+
+export type PublicCardSummary = {
+  publicId: string;
+  createdAt: string;
+};
+
+// Used by app/sitemap.ts to enumerate every indexable profile URL. Applies
+// the same is_public/status filter as getCardByPublicId so a private or
+// inactive card can never end up listed in the sitemap.
+export async function listPublicCardIds(): Promise<PublicCardSummary[]> {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .from("cards")
+    .select("public_id, created_at")
+    .eq("is_public", true)
+    .eq("status", "active");
+
+  if (error || !data) return [];
+
+  return data.map((row) => ({
+    publicId: row.public_id as string,
+    createdAt: row.created_at as string,
+  }));
+}
