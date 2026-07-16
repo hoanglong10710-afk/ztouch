@@ -15,11 +15,17 @@ type MockUser = { id: string } | null;
 function makeSupabaseMock({
   user = null as MockUser,
   updateError = null as { message: string } | null,
+  publicIdMatches = [] as { id: string }[],
+  lookupError = null as { message: string } | null,
 } = {}) {
   const eqOwner = vi.fn().mockResolvedValue({ error: updateError });
   const eqId = vi.fn().mockReturnValue({ eq: eqOwner });
   const update = vi.fn().mockReturnValue({ eq: eqId });
-  const from = vi.fn().mockReturnValue({ update });
+
+  const selectEq = vi.fn().mockResolvedValue({ data: publicIdMatches, error: lookupError });
+  const select = vi.fn().mockReturnValue({ eq: selectEq });
+
+  const from = vi.fn().mockReturnValue({ update, select });
 
   return {
     auth: { getUser: vi.fn().mockResolvedValue({ data: { user } }) },
@@ -27,6 +33,8 @@ function makeSupabaseMock({
     __update: update,
     __eqId: eqId,
     __eqOwner: eqOwner,
+    __select: select,
+    __selectEq: selectEq,
   };
 }
 
@@ -132,8 +140,41 @@ describe("updateCard", () => {
     expect(updatedFields.public_id).toBe("ABC123");
   });
 
-  it("accepts a new public_id that matches the slug rules", async () => {
-    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+  it("accepts a new public_id that matches the slug rules and is available", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" }, publicIdMatches: [] });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "long" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result).toEqual({ success: true });
+    expect(supabaseMock.__selectEq).toHaveBeenCalledWith("public_id", "long");
+    const updatedFields = supabaseMock.__update.mock.calls[0][0];
+    expect(updatedFields.public_id).toBe("long");
+  });
+
+  it("rejects a changed public_id already used by another card", async () => {
+    const supabaseMock = makeSupabaseMock({
+      user: { id: "user-1" },
+      publicIdMatches: [{ id: "card-2" }],
+    });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "long" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result.success).toBe(false);
+    if (!result.success) {
+      expect(result.fieldErrors?.public_id).toBe("Đường dẫn này đã được sử dụng.");
+    }
+    expect(supabaseMock.__update).not.toHaveBeenCalled();
+  });
+
+  it("allows saving when the only row with that public_id is the card's own row", async () => {
+    const supabaseMock = makeSupabaseMock({
+      user: { id: "user-1" },
+      publicIdMatches: [{ id: "card-1" }],
+    });
     mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
 
     const input = makeCard({ public_id: "long" });
@@ -142,6 +183,31 @@ describe("updateCard", () => {
     expect(result).toEqual({ success: true });
     const updatedFields = supabaseMock.__update.mock.calls[0][0];
     expect(updatedFields.public_id).toBe("long");
+  });
+
+  it("skips the uniqueness lookup when the public_id is unchanged", async () => {
+    const supabaseMock = makeSupabaseMock({ user: { id: "user-1" } });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "ABC123" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result).toEqual({ success: true });
+    expect(supabaseMock.__select).not.toHaveBeenCalled();
+  });
+
+  it("returns a typed error when the uniqueness lookup fails", async () => {
+    const supabaseMock = makeSupabaseMock({
+      user: { id: "user-1" },
+      lookupError: { message: "lookup boom" },
+    });
+    mockedCreateServerSupabase.mockResolvedValue(supabaseMock as never);
+
+    const input = makeCard({ public_id: "long" });
+    const result = await updateCard("card-1", input, "ABC123");
+
+    expect(result).toEqual({ success: false, error: "lookup boom" });
+    expect(supabaseMock.__update).not.toHaveBeenCalled();
   });
 
   it("rejects a changed public_id that fails the slug rules", async () => {

@@ -30,11 +30,31 @@ export async function updateCard(
   }
 
   const fieldErrors = validateCard(input);
+  const trimmedPublicId = input.public_id.trim();
 
   if (input.public_id !== previousPublicId) {
     const publicIdError = validatePublicId(input.public_id);
+
     if (publicIdError) {
       fieldErrors.public_id = publicIdError;
+    } else {
+      // Filtered by public_id only (no neq on id) so the uniqueness check
+      // works the same against a PostgREST-compatible backend that may not
+      // support every filter operator; "owned by this same card" is instead
+      // decided client-side below.
+      const { data: matches, error: lookupError } = await supabase
+        .from("cards")
+        .select("id")
+        .eq("public_id", trimmedPublicId);
+
+      if (lookupError) {
+        return { success: false, error: lookupError.message };
+      }
+
+      const takenByAnotherCard = (matches ?? []).some((row) => row.id !== cardId);
+      if (takenByAnotherCard) {
+        fieldErrors.public_id = "Đường dẫn này đã được sử dụng.";
+      }
     }
   }
 
@@ -63,7 +83,7 @@ export async function updateCard(
       linkedin: input.linkedin,
       github: input.github,
       address: input.address,
-      public_id: input.public_id.trim(),
+      public_id: trimmedPublicId,
     })
     .eq("id", cardId)
     .eq("owner_id", user.id);

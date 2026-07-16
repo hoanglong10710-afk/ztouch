@@ -52,6 +52,14 @@ export default function EditPage() {
   const [contacts, setContacts] = useState<EmergencyContactFormValues[]>([]);
   const [initialContacts, setInitialContacts] = useState<EmergencyContactFormValues[]>([]);
   const [showReadyDialog, setShowReadyDialog] = useState(false);
+  // Uniqueness can only be checked server-side, so a rejected value is
+  // remembered here and surfaced through the same inline error slot as the
+  // client-side slug validation -- cleared implicitly once the owner edits
+  // public_id away from the rejected value (see `errors` below).
+  const [publicIdConflict, setPublicIdConflict] = useState<{
+    value: string;
+    message: string;
+  } | null>(null);
 
   // sessionStorage never changes for the lifetime of this page, so there is
   // nothing to subscribe to -- this only needs a snapshot, read safely on
@@ -144,6 +152,9 @@ export default function EditPage() {
 
     if (!result.success) {
       setSaving(false);
+      if (result.fieldErrors?.public_id) {
+        setPublicIdConflict({ value: card.public_id, message: result.fieldErrors.public_id });
+      }
       toast.error(result.error);
       return;
     }
@@ -191,17 +202,19 @@ export default function EditPage() {
     const baseErrors = validateCard(card);
 
     // Legacy public_ids predate the vanity-slug rules and must keep
-    // working untouched -- only enforce the slug format once the owner
-    // actually edits it.
+    // working untouched -- only enforce the slug format (and any
+    // server-checked uniqueness conflict) once the owner actually edits it.
     if (card.public_id !== initialCard?.public_id) {
-      const publicIdError = validatePublicId(card.public_id);
+      const publicIdError =
+        validatePublicId(card.public_id) ??
+        (publicIdConflict?.value === card.public_id ? publicIdConflict.message : undefined);
       if (publicIdError) {
         return { ...baseErrors, public_id: publicIdError };
       }
     }
 
     return baseErrors;
-  }, [card, initialCard]);
+  }, [card, initialCard, publicIdConflict]);
   const rescueErrors = useMemo(
     () => (card?.profile_type === "rescue" ? validateRescueForm(rescueForm) : {}),
     [card, rescueForm]

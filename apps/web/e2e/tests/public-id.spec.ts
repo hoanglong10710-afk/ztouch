@@ -54,6 +54,28 @@ test("a reserved word slug shows a validation error and blocks saving", async ({
   await expect(saveButton).toBeDisabled();
 });
 
+test("a slug already used by another card shows an inline uniqueness error and blocks saving", async ({
+  page,
+  context,
+}) => {
+  await seedCard({ title: "Hồ sơ A", public_id: "taken-slug" });
+  const cardB = await seedCard({ title: "Hồ sơ B" });
+  await signIn(context, APP_URL);
+
+  await page.goto(`/dashboard/edit/${cardB.id}`);
+
+  const publicIdInput = page.getByLabel("Đường dẫn công khai");
+  await publicIdInput.fill("taken-slug");
+
+  await page.getByRole("button", { name: /Lưu thay đổi/ }).click();
+
+  await expect(page.getByText("Đường dẫn này đã được sử dụng.")).toBeVisible();
+  await expect(page.getByRole("button", { name: /Lưu thay đổi/ })).toBeDisabled();
+
+  await page.reload();
+  await expect(page.getByLabel("Đường dẫn công khai")).toHaveValue(cardB.public_id);
+});
+
 test("an untouched legacy public_id keeps saving other fields without a slug error", async ({
   page,
   context,
