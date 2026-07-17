@@ -6,6 +6,7 @@ import Image from "next/image";
 type Props = {
   name: string;
   jobTitle: string | null;
+  company: string | null;
   bio: string | null;
   avatarUrl: string | null;
 };
@@ -14,8 +15,9 @@ type Props = {
 // next/image refuses to optimize unless images.dangerouslyAllowSVG is set.
 const FALLBACK_AVATAR = "https://placehold.co/200x200.png";
 
-export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props) {
+export default function ProfileHeader({ name, jobTitle, company, bio, avatarUrl }: Props) {
   const [imageFailed, setImageFailed] = useState(false);
+  const subtitle = [jobTitle, company].filter(Boolean).join(" · ");
 
   return (
     <header className="flex flex-col items-center">
@@ -30,7 +32,7 @@ export default function ProfileHeader({ name, jobTitle, bio, avatarUrl }: Props)
 
       <h1 className="mt-6 text-3xl font-bold text-foreground">{name}</h1>
 
-      {jobTitle && <p className="mt-2 text-muted-foreground">{jobTitle}</p>}
+      {subtitle && <p className="mt-2 text-muted-foreground">{subtitle}</p>}
 
       {bio && (
         <p className="mt-6 whitespace-pre-wrap text-center text-foreground">

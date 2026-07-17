@@ -5,7 +5,12 @@ vi.mock("@/lib/supabase/server", () => ({
 }));
 
 import { createServerSupabase } from "@/lib/supabase/server";
-import { getCardByPublicId, getPrimaryEmergencyContact, listPublicCardIds } from "./data";
+import {
+  getCardByPublicId,
+  getPrimaryEmergencyContact,
+  getRescueMedicalInfo,
+  listPublicCardIds,
+} from "./data";
 import type { Card } from "@/types/card";
 
 const mockedCreateServerSupabase = vi.mocked(createServerSupabase);
@@ -193,5 +198,42 @@ describe("getPrimaryEmergencyContact", () => {
 
     expect(rpc).toHaveBeenCalledWith("get_primary_emergency_contact", { public_id: "sunpeo" });
     expect(result.contact?.full_name).toBe("A");
+  });
+});
+
+describe("getRescueMedicalInfo", () => {
+  beforeEach(() => {
+    mockedCreateServerSupabase.mockReset();
+  });
+
+  it("calls the SECURITY DEFINER rpc scoped to the given public_id", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({
+      data: {
+        blood_type: "O+",
+        allergies: "Penicillin",
+        medical_conditions: "Hen suyễn",
+        medications: "Ventolin",
+      },
+      error: null,
+    });
+    const rpc = vi.fn().mockReturnValue({ maybeSingle });
+    mockedCreateServerSupabase.mockResolvedValue({ rpc } as never);
+
+    const result = await getRescueMedicalInfo("sunpeo");
+
+    expect(rpc).toHaveBeenCalledWith("get_rescue_medical_info", { public_id: "sunpeo" });
+    expect(result.info?.blood_type).toBe("O+");
+    expect(result.info?.medications).toBe("Ventolin");
+  });
+
+  it("returns a null info (not an error) when no rescue_profiles row exists", async () => {
+    const maybeSingle = vi.fn().mockResolvedValue({ data: null, error: null });
+    const rpc = vi.fn().mockReturnValue({ maybeSingle });
+    mockedCreateServerSupabase.mockResolvedValue({ rpc } as never);
+
+    const result = await getRescueMedicalInfo("sunpeo");
+
+    expect(result.info).toBeNull();
+    expect(result.error).toBeNull();
   });
 });

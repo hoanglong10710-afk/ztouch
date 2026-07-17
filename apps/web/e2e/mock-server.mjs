@@ -165,6 +165,22 @@ const server = http.createServer(async (req, res) => {
     return;
   }
 
+  if (url.pathname === "/__e2e__/seed-rescue-profile" && req.method === "POST") {
+    const body = (await readBody(req)) || {};
+    const row = {
+      card_id: body.card_id,
+      blood_type: body.blood_type ?? null,
+      allergies: body.allergies ?? null,
+      medical_conditions: body.medical_conditions ?? null,
+      medications: body.medications ?? null,
+      created_at: body.created_at || new Date().toISOString(),
+      updated_at: body.updated_at || new Date().toISOString(),
+    };
+    rescueProfiles.push(row);
+    sendJson(res, 201, row);
+    return;
+  }
+
   if (url.pathname === "/__e2e__/seed-emergency-contact" && req.method === "POST") {
     const body = (await readBody(req)) || {};
     const row = {
@@ -468,6 +484,50 @@ const server = http.createServer(async (req, res) => {
             full_name: row.full_name,
             relationship: row.relationship,
             phone: row.phone,
+          }))
+      : [];
+
+    if (wantsSingleObject(req)) {
+      if (rows.length !== 1) {
+        sendJson(res, 406, {
+          code: "PGRST116",
+          details: `Results contain ${rows.length} rows`,
+          hint: null,
+          message: "JSON object requested, multiple (or no) rows returned",
+        });
+        return;
+      }
+      sendJson(res, 200, rows[0]);
+      return;
+    }
+
+    sendJson(res, 200, rows);
+    return;
+  }
+
+  // --- PostgREST RPC: /rest/v1/rpc/get_rescue_medical_info ---
+  // Mirrors what the real get_rescue_medical_info(public_id) SECURITY
+  // DEFINER function does (see supabase/migrations/
+  // 20260718090000_public_rescue_medical_info_function.sql): only the
+  // medical fields of a public, active, rescue-type card are ever returned.
+  if (url.pathname === "/rest/v1/rpc/get_rescue_medical_info" && req.method === "POST") {
+    const body = (await readBody(req)) || {};
+    const card = cards.find(
+      (row) =>
+        row.public_id === body.public_id &&
+        row.is_public === true &&
+        row.status === "active" &&
+        row.profile_type === "rescue"
+    );
+
+    const rows = card
+      ? rescueProfiles
+          .filter((row) => row.card_id === card.id)
+          .map((row) => ({
+            blood_type: row.blood_type,
+            allergies: row.allergies,
+            medical_conditions: row.medical_conditions,
+            medications: row.medications,
           }))
       : [];
 

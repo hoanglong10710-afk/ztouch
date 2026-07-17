@@ -20,6 +20,25 @@ test("a public, active card renders on its public profile page", async ({ page }
   await expect(page.getByText("Xin chào, đây là hồ sơ công khai của tôi.")).toBeVisible();
 });
 
+test("a public card renders job title, company, and address alongside the other basic fields", async ({
+  page,
+}) => {
+  const card = await seedCard({
+    title: "Trần Thị B",
+    display_name: "Trần Thị B",
+    job_title: "Kỹ sư phần mềm",
+    company: "Z-TOUCH JSC",
+    address: "123 Đường Láng, Hà Nội",
+    is_public: true,
+    status: "active",
+  });
+
+  await page.goto(`/p/${card.public_id}`);
+
+  await expect(page.getByText("Kỹ sư phần mềm · Z-TOUCH JSC")).toBeVisible();
+  await expect(page.getByText("123 Đường Láng, Hà Nội")).toBeVisible();
+});
+
 test("a legacy random public_id resolves to its public profile", async ({ page }) => {
   const card = await seedCard({
     title: "Hồ sơ cũ",

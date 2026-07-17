@@ -1,12 +1,12 @@
 import { notFound } from "next/navigation";
 import { headers } from "next/headers";
 import { after } from "next/server";
-import { Phone, Mail, Globe, Siren, Download } from "lucide-react";
+import { Phone, Mail, Globe, MapPin, Siren, Download, HeartPulse } from "lucide-react";
 import type { Metadata } from "next";
 import ProfileHeader from "@/components/public/ProfileHeader";
 import InfoButton from "@/components/public/InfoButton";
 import SocialButton from "@/components/public/SocialButton";
-import { getCardByPublicId, getPrimaryEmergencyContact } from "./data";
+import { getCardByPublicId, getPrimaryEmergencyContact, getRescueMedicalInfo } from "./data";
 import { createServerSupabase } from "@/lib/supabase/server";
 import { recordCardView } from "@/lib/analytics/record-card-view";
 import { buildPublicProfileMetadata, notFoundProfileMetadata } from "@/lib/public-profile-metadata";
@@ -74,6 +74,18 @@ export default async function PublicPage({ params, searchParams }: Props) {
       ? await getPrimaryEmergencyContact(publicId)
       : { contact: null };
 
+  const { info: medicalInfo } =
+    card.profile_type === "rescue" ? await getRescueMedicalInfo(publicId) : { info: null };
+
+  const medicalFields = medicalInfo
+    ? [
+        { label: "Nhóm máu", value: medicalInfo.blood_type },
+        { label: "Dị ứng", value: medicalInfo.allergies },
+        { label: "Tình trạng bệnh lý", value: medicalInfo.medical_conditions },
+        { label: "Thuốc đang sử dụng", value: medicalInfo.medications },
+      ].filter((field) => field.value)
+    : [];
+
   const displayName = card.display_name || card.title || "";
   const socialLinks = SOCIAL_LINKS.filter(({ key }) => isSafeUrl(card[key]));
 
@@ -99,9 +111,34 @@ export default async function PublicPage({ params, searchParams }: Props) {
           <ProfileHeader
             name={displayName}
             jobTitle={card.job_title}
+            company={card.company}
             bio={card.bio}
             avatarUrl={isSafeUrl(card.avatar_url) ? card.avatar_url : null}
           />
+
+          {card.profile_type === "rescue" && medicalFields.length > 0 && (
+            <section
+              aria-labelledby="medical-info-heading"
+              className="mt-6 space-y-3 rounded-xl border border-border bg-muted/50 p-4 sm:mt-8 sm:p-5"
+            >
+              <h2
+                id="medical-info-heading"
+                className="flex items-center justify-center gap-1.5 text-sm font-semibold tracking-wide text-foreground uppercase"
+              >
+                <HeartPulse className="size-4" aria-hidden="true" />
+                Thông tin y tế
+              </h2>
+
+              <dl className="space-y-2">
+                {medicalFields.map(({ label, value }) => (
+                  <div key={label} className="text-center">
+                    <dt className="text-sm text-muted-foreground">{label}</dt>
+                    <dd className="font-medium whitespace-pre-wrap text-foreground">{value}</dd>
+                  </div>
+                ))}
+              </dl>
+            </section>
+          )}
 
           {card.profile_type === "rescue" && contact && (
             <section
@@ -169,6 +206,18 @@ export default async function PublicPage({ params, searchParams }: Props) {
                 ariaLabel={`Mở website: ${card.website}`}
                 copyValue={card.website}
                 copyLabel="Sao chép đường dẫn website"
+              />
+            )}
+
+            {card.address && (
+              <InfoButton
+                href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(card.address)}`}
+                icon={MapPin}
+                label={card.address}
+                external
+                ariaLabel={`Xem địa chỉ trên bản đồ: ${card.address}`}
+                copyValue={card.address}
+                copyLabel="Sao chép địa chỉ"
               />
             )}
 

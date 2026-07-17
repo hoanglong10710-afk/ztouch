@@ -39,6 +39,29 @@ export async function getPrimaryEmergencyContact(publicId: string) {
   return { contact: data as PrimaryEmergencyContact | null, error };
 }
 
+export type RescueMedicalInfo = {
+  blood_type: string | null;
+  allergies: string | null;
+  medical_conditions: string | null;
+  medications: string | null;
+};
+
+// Calls the get_rescue_medical_info(public_id) SECURITY DEFINER RPC (see
+// supabase/migrations/20260718090000_public_rescue_medical_info_function.sql)
+// -- the only sanctioned path for an anonymous visitor to read any
+// rescue_profiles data. Returns null for a non-public/inactive/non-rescue
+// card or a card with no rescue_profiles row, by construction of that
+// function.
+export async function getRescueMedicalInfo(publicId: string) {
+  const supabase = await createServerSupabase();
+
+  const { data, error } = await supabase
+    .rpc("get_rescue_medical_info", { public_id: publicId })
+    .maybeSingle();
+
+  return { info: data as RescueMedicalInfo | null, error };
+}
+
 export type PublicCardSummary = {
   publicId: string;
   createdAt: string;

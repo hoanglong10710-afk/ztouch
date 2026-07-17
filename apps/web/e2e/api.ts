@@ -17,6 +17,7 @@ type SeedCardInput = {
   phone?: string | null;
   email?: string | null;
   website?: string | null;
+  address?: string | null;
 };
 
 type SeedEmergencyContactInput = {
@@ -27,6 +28,14 @@ type SeedEmergencyContactInput = {
   phone?: string;
   priority?: number;
   is_primary?: boolean;
+};
+
+type SeedRescueProfileInput = {
+  card_id: string;
+  blood_type?: string | null;
+  allergies?: string | null;
+  medical_conditions?: string | null;
+  medications?: string | null;
 };
 
 // Talks directly to the mock server's test-only admin endpoints (never the
@@ -50,6 +59,16 @@ export async function seedEmergencyContact(
   input: SeedEmergencyContactInput
 ): Promise<{ id: string }> {
   const response = await fetch(`${MOCK_SERVER_URL}/__e2e__/seed-emergency-contact`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(input),
+  });
+
+  return response.json();
+}
+
+export async function seedRescueProfile(input: SeedRescueProfileInput): Promise<{ card_id: string }> {
+  const response = await fetch(`${MOCK_SERVER_URL}/__e2e__/seed-rescue-profile`, {
     method: "POST",
     headers: { "Content-Type": "application/json" },
     body: JSON.stringify(input),
